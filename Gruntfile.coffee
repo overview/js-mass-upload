@@ -80,7 +80,7 @@ module.exports = (grunt) ->
 
   # Only rewrite changed files on watch
   grunt.event.on 'watch', (action, filepath) ->
-    if filepath.indexOf('.coffee') == filepath.length - 8 && filepath.length > 7
+    if filepath.indexOf('.coffee') == filepath.length - 7 && filepath.length > 7
       compilePath = grunt.config('coffee.compile.cwd')
       testPath = grunt.config('coffee.test.cwd')
       if filepath.indexOf(compilePath) == 0
