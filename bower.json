@@ -1,0 +1,14 @@
+{
+  "name": "js-mass-upload",
+  "version": "0.0.1",
+  "main": "mass-upload.js",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "node_modules",
+    "src/coffee",
+    "spec",
+    "Gruntfile.js",
+    "package.json"
+  ]
+}

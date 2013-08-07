@@ -1,0 +1,41 @@
+{
+  "name": "js-mass-upload",
+  "version": "0.0.1",
+  "description": "Create upload UIs for thousands of files and gigabytes of data",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/overview/js-mass-upload"
+  },
+  "keywords": [
+    "mass",
+    "upload",
+    "file",
+    "blob",
+    "ui"
+  ],
+  "author": "The Overview Project <adam@adamhooper.com>",
+  "licenses": [
+    {
+      "type": "Apache",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  ],
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-requirejs": "~0.3.5",
+    "karma-script-launcher": "~0.1.0",
+    "karma-chrome-launcher": "~0.1.0",
+    "karma-firefox-launcher": "~0.1.0",
+    "karma-html2js-preprocessor": "~0.1.0",
+    "karma-jasmine": "~0.1.0",
+    "karma-requirejs": "~0.1.0",
+    "karma-coffee-preprocessor": "~0.1.0",
+    "karma-phantomjs-launcher": "~0.1.0",
+    "karma": "~0.10.0",
+    "grunt-karma": "~0.6.1",
+    "grunt-contrib-watch": "~0.5.1"
+  }
+}
