@@ -81,7 +81,7 @@ But first let's define some datatypes:
     * `loaded` and `total` (integer `Number`s, like in a `ProgressEvent`)
     * `status` (`"listing"`, `"uploading"` or `"waiting"`)
     * `errors` (an Array of `Error` objects)
-    * `complete`: `true` iff `state === "waiting" && loaded === total && total > 0 && errors.length === 0`
+    * `isComplete()`: `true` iff `state === "waiting" && loaded === total && total > 0 && errors.length === 0`
 * `MassUpload.Error`: an error that prevents this upload from going smoothly. Errors can be removed by retrying operations or removing the files that they apply to. They are immutable and contain:
     * `failedCall`: "listFiles", "uploadFile" or "deleteFile"
     * `failedCallArgument`: `undefined`, a `File` or a `FileInfo`, as appropriate
@@ -188,7 +188,7 @@ Talking with a server
 
 Let's portray an example web service in which the user owns a bunch of folders. For each folder, the user owns some files.
 
-Let's give each file a [GUID](http://en.wikipedia.org/wiki/Globally_unique_identifier) based on its filename, size and lastModified time.
+Let's give each file a [GUID](http://en.wikipedia.org/wiki/Globally_unique_identifier) based on its filename, size and lastModifiedDate.
 
 Let's also assume we want to be able to resume uploads. We can't do that with multipart/form-data; instead, we'll upload raw binary blobs.
 
@@ -202,7 +202,7 @@ Our server API might look something like this:
 | `PUT` | `/folders/:permalink` | `name` | Renames a folder |
 | `GET` | `/folders/:permalink/files` | | Lists a folder's contents |
 | `DELETE` | `/folders/:permalink/files` | | Deletes all files from the folder
-| `PUT` | `/folders/:permalink/files/:guid` | `name`, `size`, `lastModified` | Creates an empty file with the given GUID
+| `PUT` | `/folders/:permalink/files/:guid` | `name`, `size`, `lastModifiedDate` | Creates an empty file with the given GUID
 | `HEAD` | `/folders/:permalink/files/:guid` | | Describes how much of the file is uploaded, using a [`Content-Range`](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16) header.
 | `PATCH` | `/folders/:permalink/files/:guid` | (raw bytes) | Uploads the file's raw bytes using the passed `Content-Range` header. Fails if the `Content-Range` would create a gap in the file or go past the end of the file; succeeds once the file is completely uploaded.
 | `DELETE` | `/folders/:permalink/files/:guid` | | Deletes the file from the server
