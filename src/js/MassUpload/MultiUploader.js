@@ -30,11 +30,16 @@ define(['./FileInfo'], function(FileInfo) {
       this.uploads = uploads;
       this.doUpload = doUpload;
       this.callbacks = callbacks;
-      this._cursor = null;
-      this._errors = null;
-      this._upload = null;
+      this._reset();
       this._refreshProgress();
     }
+
+    MultiUploader.prototype._reset = function() {
+      this._aborting = false;
+      this._cursor = null;
+      this._errors = null;
+      return this._upload = null;
+    };
 
     MultiUploader.prototype._refreshProgress = function() {
       var file, fileInfo, loaded, total, upload, _i, _len, _ref;
@@ -73,10 +78,22 @@ define(['./FileInfo'], function(FileInfo) {
       return this._tick();
     };
 
+    MultiUploader.prototype.abort = function() {
+      var _base;
+      if (!this._aborting) {
+        this._aborting = true;
+        if (typeof (_base = this.callbacks).onAbort === "function") {
+          _base.onAbort();
+        }
+        if (typeof this._abortCallback === 'function') {
+          return this._abortCallback();
+        }
+      }
+    };
+
     MultiUploader.prototype._tick = function() {
       var upload;
-      upload = this._cursor.next();
-      if (upload != null) {
+      if (!this._aborting && ((upload = this._cursor.next()) != null)) {
         return this._startSingleUpload(upload);
       } else {
         return this._finish();
@@ -90,7 +107,7 @@ define(['./FileInfo'], function(FileInfo) {
       if (typeof (_base = this.callbacks).onSingleStart === "function") {
         _base.onSingleStart(upload);
       }
-      return this.doUpload(upload.file, (function(progressEvent) {
+      return this._abortCallback = this.doUpload(upload.file, (function(progressEvent) {
         return _this._onSingleProgress(upload, progressEvent);
       }), (function() {
         return _this._onSingleSuccess(upload);
@@ -155,9 +172,7 @@ define(['./FileInfo'], function(FileInfo) {
     MultiUploader.prototype._finish = function() {
       var errors, _base, _base1, _base2;
       errors = this._errors;
-      this._cursor = null;
-      this._errors = null;
-      this._upload = null;
+      this._reset();
       if (errors.length) {
         if (typeof (_base = this.callbacks).onErrors === "function") {
           _base.onErrors(errors);

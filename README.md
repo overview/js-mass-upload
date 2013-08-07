@@ -126,6 +126,8 @@ Uploads a file to the server. Called asynchronously.
 * `success`: To be called on success.
 * `error`: To be called on error.
 
+**Returns**: a function that, when called, aborts the operation as soon as possible. (This function should asynchronously call `error('aborted')`.)
+
 ---
 
 ```javascript

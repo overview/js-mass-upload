@@ -32,6 +32,7 @@ define [ './FileInfo' ], (FileInfo) ->
   # Usage:
   #
   #     multiUploader = new MultiUploader(uploads, doUpload, {
+  #       onStartAbort: (upload) -> ...
   #       onSingleStart: (upload) -> ...
   #       onSingleStop: (upload) -> ...
   #       onSingleProgress: (upload) -> ...
@@ -67,13 +68,33 @@ define [ './FileInfo' ], (FileInfo) ->
   # onErrors() will only be called after all uploads have completed or errored.
   #
   # Only one file is uploaded at a time.
+  #
+  # Aborting:
+  #
+  #     multiUploader.abort()
+  #
+  # To abort, MultiUploader:
+  #
+  # 1. Calls onStartAbort(upload) with the current upload.
+  # 2. Calls the abort callback that was returned by doUpload.
+  # 3. Waits; the abort callback will lead to either success or error (it's a
+  #    race).
+  # 4. Calls onSingleStop(upload), onSuccess() or onErrors(), and finally
+  #    onStop().
+  #
+  # Note: handle onStop(), not onErrors(). First of all, this protects you from
+  # a faulty abort method (if abort does nothing, the file upload will actually
+  # succeed). Second, it is possible for no actual errors to have accumulated.
   class MultiUploader
     constructor: (@uploads, @doUpload, @callbacks) ->
+      @_reset()
+      @_refreshProgress()
+
+    _reset: ->
+      @_aborting = false
       @_cursor = null
       @_errors = null
       @_upload = null
-
-      @_refreshProgress()
 
     # Sets @_progress = { total: ?, loaded: ? } by iterating over @uploads
     _refreshProgress: ->
@@ -103,10 +124,16 @@ define [ './FileInfo' ], (FileInfo) ->
 
       @_tick()
 
+    abort: ->
+      if !@_aborting
+        @_aborting = true
+        @callbacks.onAbort?()
+        if typeof @_abortCallback == 'function'
+          @_abortCallback()
+
     # Finds another upload and begins uploading it
     _tick: ->
-      upload = @_cursor.next()
-      if upload?
+      if !@_aborting && (upload = @_cursor.next())?
         @_startSingleUpload(upload)
       else
         @_finish()
@@ -117,7 +144,7 @@ define [ './FileInfo' ], (FileInfo) ->
 
       @callbacks.onSingleStart?(upload)
 
-      @doUpload(
+      @_abortCallback = @doUpload(
         upload.file,
         ((progressEvent) => @_onSingleProgress(upload, progressEvent)),
         (() => @_onSingleSuccess(upload)),
@@ -157,9 +184,8 @@ define [ './FileInfo' ], (FileInfo) ->
     # Fires onSuccess()/onErrors() and onStop()
     _finish: ->
       errors = @_errors
-      @_cursor = null
-      @_errors = null
-      @_upload = null
+
+      @_reset()
 
       if errors.length
         @callbacks.onErrors?(errors)

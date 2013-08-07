@@ -7,6 +7,7 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
     beforeEach ->
       spies = {}
       spies[k] = jasmine.createSpy() for k in [
+        'onAbort'
         'onStart'
         'onStop'
         'onSingleStart'
@@ -46,6 +47,7 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
 
     describe 'with multiple unsent uploads', ->
       uploads = undefined
+      userAbort = undefined
       userProgress = undefined
       userSuccess = undefined
       userError = undefined
@@ -55,6 +57,8 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
           { file: { name: 'file1', size: 1000 }, fileInfo: null }
           { file: { name: 'file2', size: 4000 }, fileInfo: null }
         ]
+        userAbort = jasmine.createSpy()
+        doUpload.andReturn(userAbort)
         subject = new MultiUploader(uploads, doUpload, spies)
         subject.run()
         [ __, userProgress, userSuccess, userError ] = doUpload.mostRecentCall?.args ? []
@@ -64,6 +68,45 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
 
       it 'should call onSingleStart(upload)', ->
         expect(spies.onSingleStart).toHaveBeenCalledWith(uploads[0])
+
+      describe 'on abort when abort is a function', ->
+        beforeEach ->
+          subject.abort()
+
+        it 'should call the user abort method', ->
+          expect(userAbort).toHaveBeenCalled()
+
+        it 'should do nothing on second abort', ->
+          subject.abort()
+          expect(userAbort.calls.length).toEqual(1)
+
+        it 'should call onAbort()', ->
+          expect(spies.onAbort).toHaveBeenCalled()
+
+        it 'should call onSingleSuccess(upload), onSingleStop(upload), onSuccess() and onStop() on success', ->
+          userSuccess()
+          expect(spies.onSingleSuccess).toHaveBeenCalledWith(uploads[0])
+          expect(spies.onSingleStop).toHaveBeenCalledWith(uploads[0])
+          expect(spies.onSuccess).toHaveBeenCalledWith()
+          expect(spies.onStop).toHaveBeenCalledWith()
+
+        it 'should not doUpload again on success', ->
+          userSuccess()
+          expect(doUpload.calls.length).toEqual(1)
+
+        it 'should call onSingleError(upload), onSingleStop(upload), onErrors() and onStop() on error', ->
+          userError('aborting')
+          expect(spies.onSingleError).toHaveBeenCalledWith(uploads[0], 'aborting')
+          expect(spies.onSingleStop).toHaveBeenCalledWith(uploads[0])
+          expect(spies.onErrors).toHaveBeenCalledWith([ { upload: uploads[0], detail: 'aborting' } ])
+          expect(spies.onStop).toHaveBeenCalledWith()
+
+        it 'should not allow running while aborting', ->
+          expect(-> subject.run()).toThrow('already running')
+
+        it 'should allow running after abort is complete', ->
+          userSuccess()
+          expect(-> subject.run()).not.toThrow()
 
       describe 'on single file progress', ->
         beforeEach ->
@@ -172,3 +215,32 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
 
         it 'should call onStop()', ->
           expect(spies.onStop).toHaveBeenCalledWith()
+
+    describe 'on abort when abort is not a function', ->
+      uploads = undefined
+      userProgress = undefined
+      userSuccess = undefined
+      userError = undefined
+
+      beforeEach ->
+        uploads = [
+          { file: { name: 'file1', size: 1000 }, fileInfo: null }
+          { file: { name: 'file2', size: 4000 }, fileInfo: null }
+        ]
+        userAbort = 'some stupid return value'
+        doUpload.andReturn(userAbort)
+        subject = new MultiUploader(uploads, doUpload, spies)
+        subject.run()
+        [ __, userProgress, userSuccess, userError ] = doUpload.mostRecentCall?.args ? []
+        subject.abort()
+
+      it 'should not error (by trying to call the function that is not a function)', ->
+        expect(true).toBe(true)
+
+      it 'should call onStop() when this upload is done', ->
+        userSuccess()
+        expect(spies.onStop).toHaveBeenCalled()
+
+      it 'should not run subsequent uploads', ->
+        userSuccess()
+        expect(doUpload.calls.length).toEqual(1)
