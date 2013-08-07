@@ -16,7 +16,7 @@ Usage
 First, include the library. You may use RequireJS:
 
 ```javascript
-require([ 'path/to/mass-upload.js' ], function(MassUpload) { ... });
+require([ 'path/to/mass-upload' ], function(MassUpload) { ... });
 ```
 
 Or, you can go the old-fashioned route in your HTML:
