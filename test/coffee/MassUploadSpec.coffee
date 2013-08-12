@@ -4,6 +4,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
   file1 = { name: 'file1.txt', size: 10000, lastModifiedDate: date1 }
   file2 = { name: 'file2.txt', size: 20000, lastModifiedDate: date1 }
+  file3 = { name: 'file3.txt', size: 30000, lastModifiedDate: date1 }
   fileInfo1 = { name: 'file1.txt', loaded: 1000, total: 10000, lastModifiedDate: date1 }
   fileInfo2 = { name: 'file2.txt', loaded: 2000, total: 20000, lastModifiedDate: date1 }
   conflictFile = { name: 'conflicting-file.txt', size: 30000, lastModifiedDate: date1 }
@@ -20,6 +21,8 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
   FakeUploads = Backbone.Collection.extend
     model: FakeUpload
 
+    next: -> @find((model) -> !model.get('error')?)
+
   describe 'MassUpload', ->
     options = undefined
     subject = undefined
@@ -27,10 +30,10 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
     describe 'constructor', ->
       beforeEach ->
         options =
-          doListFiles: jasmine.createSpy()
-          doUploadFile: jasmine.createSpy()
-          doDeleteFile: jasmine.createSpy()
-          onUploadConflictingFile: jasmine.createSpy()
+          doListFiles: jasmine.createSpy('doListFiles')
+          doUploadFile: jasmine.createSpy('doUploadFile')
+          doDeleteFile: jasmine.createSpy('doDeleteFile')
+          onUploadConflictingFile: jasmine.createSpy('onUploadConflictingFile')
 
       it 'should set uploads, lister, uploader and deleter to default implementations', ->
         subject = new MassUpload()
@@ -46,7 +49,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
       it 'should set callbacks on uploader', ->
         subject = new MassUpload()
-        for k in [ 'onStartAbort', 'onSingleStart', 'onSingleStop', 'onSingleProgress', 'onSingleSuccess', 'onSingleError', 'onStart', 'onStop', 'onProgress', 'onSuccess', 'onErrors' ]
+        for k in [ 'onStart', 'onStop', 'onProgress', 'onSuccess', 'onError' ]
           expect(subject.uploader.callbacks[k]).toBeDefined()
 
       it 'should set callbacks on deleter', ->
@@ -75,11 +78,11 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
       beforeEach ->
         uploads = new FakeUploads()
-        uploads.addFileInfos = jasmine.createSpy()
-        uploads.addFiles = jasmine.createSpy()
-        uploader = { run: jasmine.createSpy(), abort: jasmine.createSpy() }
-        lister = { run: jasmine.createSpy() }
-        deleter = { run: jasmine.createSpy() }
+        uploads.addFileInfos = jasmine.createSpy('uploads.addFileInfos')
+        uploads.addFiles = jasmine.createSpy('uploads.addFiles')
+        uploader = { run: jasmine.createSpy('uploader.run'), abort: jasmine.createSpy('uploader.abort') }
+        lister = { run: jasmine.createSpy('lister.run') }
+        deleter = { run: jasmine.createSpy('deleter.run') }
 
         options = {
           uploads: uploads
@@ -90,8 +93,8 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
         subject = new MassUpload(options)
 
       describe 'starting empty', ->
-        it 'should have status=empty', ->
-          expect(subject.get('status')).toEqual('empty')
+        it 'should have status=waiting', ->
+          expect(subject.get('status')).toEqual('waiting')
 
       describe 'when listing files', ->
         beforeEach ->
@@ -144,7 +147,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             { file: null, fileInfo: fileInfo1, error: null }
             { file: null, fileInfo: fileInfo2, error: null }
           ]) 
-          subject.set('status', 'empty')
+          subject.set('status', 'waiting')
 
         describe 'when adding files', ->
           beforeEach -> subject.addFiles([file1])
@@ -157,45 +160,42 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             beforeEach -> subject.uploads.at(0).set({ file: file1 })
 
             it 'should call uploader.run', ->
-              expect(uploader.run).toHaveBeenCalledWith(subject.uploads.toJSON())
+              expect(uploader.run).toHaveBeenCalledWith(file1)
 
-            describe 'when uploader.run is called', ->
-              beforeEach ->
-                uploader.callbacks.onStart.call()
-
-              it 'should set status=uploading', ->
-                expect(subject.get('status')).toEqual('uploading')
+            it 'should set status=uploading when uploader.run is called', ->
+              uploader.callbacks.onStart(file1)
+              expect(subject.get('status')).toEqual('uploading')
 
       describe 'when uploading', ->
         beforeEach ->
           subject.uploads.reset([
             { file: file1, fileInfo: fileInfo1, error: null }
-            { file: null, fileInfo: fileInfo2, error: 'previous error' }
+            { file: null, fileInfo: fileInfo2, error: null }
+            { file: file3, fileInfo: null, error: 'previous error' }
           ]) 
-          uploader.callbacks.onStart.call()
+          uploader.callbacks.onStart(file1)
 
         it 'should set progress on progress', ->
-          uploader.callbacks.onSingleProgress(file1, { loaded: 1400, total: 10000 })
+          uploader.callbacks.onProgress(file1, { loaded: 1400, total: 10000 })
           expect(uploads.at(0).updateWithProgressArguments).toEqual([{ loaded: 1400, total: 10000 }])
 
         it 'should set uploading on start', ->
-          uploader.callbacks.onSingleStart(file1)
           expect(uploads.at(0).get('uploading')).toBe(true)
 
         it 'should unset error on start', ->
-          uploader.callbacks.onSingleStart(file2)
+          uploader.callbacks.onStart(file2)
           expect(uploads.at(1).get('error')).toBe(null)
 
         it 'should unset uploading on stop', ->
-          uploader.callbacks.onSingleStop(file1)
+          uploader.callbacks.onStop(file1)
           expect(uploads.at(0).get('uploading')).toBe(false)
 
         it 'should set upload error on error', ->
-          uploader.callbacks.onSingleError(file1, 'error')
+          uploader.callbacks.onError(file1, 'error')
           expect(uploads.at(0).get('error')).toEqual('error')
 
         it 'should not crash on success', ->
-          expect(-> uploader.callbacks.onSingleSuccess(file1)).not.toThrow()
+          expect(-> uploader.callbacks.onSuccess(file1)).not.toThrow()
 
         describe 'when adding a file', ->
           beforeEach ->
@@ -204,18 +204,15 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
           it 'should abort uploading', ->
             expect(uploader.abort).toHaveBeenCalled()
 
-          describe 'when abort is complete', ->
-            beforeEach ->
-              uploader.callbacks.onStop()
-
-            it 'should start uploading again', ->
-              expect(uploader.run).toHaveBeenCalledWith(uploads.toJSON())
+          it 'should start uploading again when abort is complete', ->
+            uploader.callbacks.onStop(file1)
+            expect(uploader.run).toHaveBeenCalled()
 
         describe 'when deleting a file', ->
           uploadToDelete = undefined
 
           beforeEach ->
-            uploadToDelete = subject.uploads.at(0)
+            uploadToDelete = uploads.at(0)
             subject.removeUpload(uploadToDelete)
 
           it 'should abort uploading', ->
@@ -223,11 +220,11 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
           describe 'when abort is complete', ->
             beforeEach ->
-              deleter.run.andCallFake(-> deleter.callbacks.onStart(uploadToDelete))
-              uploader.callbacks.onStop()
+              deleter.run.andCallFake(-> deleter.callbacks.onStart(fileInfo1))
+              uploader.callbacks.onStop(file1)
 
             it 'should call deleter.run()', ->
-              expect(deleter.run).toHaveBeenCalledWith(uploadToDelete)
+              expect(deleter.run).toHaveBeenCalledWith(uploadToDelete.get('fileInfo'))
 
             describe 'when delete is complete', ->
               beforeEach ->
@@ -235,22 +232,22 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
                 deleter.callbacks.onStop(uploadToDelete)
 
               it 'should remove the upload from the list', ->
-                expect(uploads.length).toEqual(1)
+                expect(uploads.length).toEqual(2)
 
               it 'should continue with uploading', ->
-                expect(uploader.run).toHaveBeenCalledWith(uploads.toJSON())
+                expect(uploader.run).toHaveBeenCalled()
 
             describe 'when delete fails', ->
               beforeEach ->
-                deleter.callbacks.onError(uploadToDelete, 'error')
-                deleter.callbacks.onStop(uploadToDelete)
+                deleter.callbacks.onError(fileInfo1, 'error')
+                deleter.callbacks.onStop(fileInfo1)
 
               it 'should keep the upload in the list', ->
-                expect(uploads.length).toEqual(2)
+                expect(uploads.length).toEqual(3)
 
               it 'should set error and keep deleting=true', ->
                 expect(uploadToDelete.get('deleting')).toBe(true)
                 expect(uploadToDelete.get('error')).toEqual('error')
 
               it 'should continue with uploading', ->
-                expect(uploader.run).toHaveBeenCalledWith(uploads.toJSON())
+                expect(uploader.run).toHaveBeenCalled()

@@ -2,14 +2,14 @@ define [
   'backbone'
   './MassUpload/UploadCollection'
   './MassUpload/FileLister'
-  './MassUpload/MultiUploader'
+  './MassUpload/FileUploader'
   './MassUpload/FileDeleter'
   './MassUpload/State'
 ], (
   Backbone
   UploadCollection
   FileLister
-  MultiUploader
+  FileUploader
   FileDeleter
   State
 ) ->
@@ -30,16 +30,14 @@ define [
   #
   #     massUpload.on('change:status', => ...)
   #     # When status is 'waiting', the server is in sync with what the user
-  #     # selected (barring race conditions). The form may be submitted.
+  #     # selected (barring race conditions). The form may be submitted as
+  #     # long as there are no errors in the uploads collection.
   #
   # From the view's perspective, rendering is straightforward:
   #
   #     massUpload.uploads # a Backbone.Collection of Upload objects
-  #     massUpload.get('status') # listing-files, listing-files-error, empty,
-  #                              # waiting, uploading, uploading-error
-  #                              # note: uploading-error just means there *are*
-  #                              # errors; the files without errors may still
-  #                              # be uploading.
+  #     massUpload.get('status') # listing-files, listing-files-error,
+  #                              # waiting, uploading
   #
   #     massUpload.get('listFilesProgress') # { loaded: 30, total: 100 }
   #
@@ -54,7 +52,7 @@ define [
   #                                    # alongside their uploads so this array
   #                                    # is redundant; but it's useful if you
   #                                    # want to present an index of all
-  #                                    # errors.
+  #                                    # errors or test if there are >0 errors.
   #
   # There are a few general rules:
   #
@@ -68,7 +66,7 @@ define [
   # * To remove upload/delete errors, call retry(upload) or retryAllUploads().
   Backbone.Model.extend
     defaults: ->
-      status: 'empty'
+      status: 'waiting'
       listFilesProgress: null
       listFilesError: null
       uploadProgress: null
@@ -89,19 +87,13 @@ define [
         onError: (errorDetail) => @_onListerError(errorDetail)
         onStop: => @_onListerStop()
 
-      @uploader = options?.uploader ? new MultiUploader([], options.doUploadFile)
+      @uploader = options?.uploader ? new FileUploader(options.doUploadFile)
       @uploader.callbacks =
-        onStart: => @_onUploaderStart()
-        onStop: => @_onUploaderStop()
-        onErrors: => @_onUploaderErrors()
-        onSuccess: => @_onUploaderSuccess()
-        onProgress: (progressEvent) => @_onUploaderProgress(progressEvent)
-        onStartAbort: => @_onUploaderStartAbort()
-        onSingleStart: (file) => @_onUploaderSingleStart(file)
-        onSingleStop: (file) => @_onUploaderSingleStop(file)
-        onSingleSuccess: (file) => @_onUploaderSingleSuccess(file)
-        onSingleError: (file, errorDetail) => @_onUploaderSingleError(file, errorDetail)
-        onSingleProgress: (file, progressEvent) => @_onUploaderSingleProgress(file, progressEvent)
+        onStart: (file) => @_onUploaderStart(file)
+        onStop: (file) => @_onUploaderStop(file)
+        onSuccess: (file) => @_onUploaderSuccess(file)
+        onError: (file, errorDetail) => @_onUploaderError(file, errorDetail)
+        onProgress: (file, progressEvent) => @_onUploaderProgress(file, progressEvent)
 
       @deleter = options?.deleter ? new FileDeleter(options.doDeleteFile)
       @deleter.callbacks =
@@ -147,8 +139,11 @@ define [
     _onUploadAdded: (upload) ->
       status = @get('status')
       if status == 'uploading' || status == 'uploading-error'
+        # Either @uploader or @deleter is working. We want them to stop as
+        # soon as possible so we can adjust to new priorities.
         @uploader.abort()
       else
+        # Neither @uploader nor @deleter is working, so let's kick one off
         @_tick()
 
     _onUploadRemoved: (upload) ->
@@ -162,49 +157,49 @@ define [
       else
         @_tick()
 
-    _onUploaderStart: ->
+    _onUploaderStart: (file) ->
       @set('status', 'uploading')
-
-    _onUploaderStop: ->
-      @_tick()
-
-    _onUploaderSingleStart: (file) ->
       upload = @uploads.get(file.name)
       upload.set
         uploading: true
         error: null
 
-    _onUploaderSingleStop: (file) ->
+    _onUploaderStop: (file) ->
       upload = @uploads.get(file.name)
       upload.set('uploading', false)
+      @_tick()
 
-    _onUploaderSingleProgress: (file, progressEvent) ->
+    _onUploaderProgress: (file, progressEvent) ->
       upload = @uploads.get(file.name)
       upload.updateWithProgress(progressEvent)
 
-    _onUploaderSingleError: (file, errorDetail) ->
+    _onUploaderError: (file, errorDetail) ->
       upload = @uploads.get(file.name)
       upload.set('error', errorDetail)
 
-    _onUploaderSingleSuccess: (file) ->
+    _onUploaderSuccess: (file) ->
       # We already have all the status we need, what with uploading=false
       # and fileInfo.loaded==fileInfo.total. Ignore this signal.
 
-    _onDeleterStart: (upload) ->
-      # do nothing
+    _onDeleterStart: (fileInfo) ->
+      @set('status', 'uploading')
 
-    _onDeleterSuccess: (upload) ->
-      @uploads.remove(upload)
+    _onDeleterSuccess: (fileInfo) ->
+      @uploads.remove(fileInfo)
 
-    _onDeleterError: (upload, errorDetail) ->
+    _onDeleterError: (fileInfo, errorDetail) ->
+      upload = @uploads.get(fileInfo.name)
       upload.set('error', errorDetail)
 
-    _onDeleterStop: (upload) ->
+    _onDeleterStop: (fileInfo) ->
       @_tick()
 
     _tick: ->
-      if @_removedUploads.length
-        upload = @_removedUploads.pop()
-        @deleter.run(upload)
+      upload = @uploads.next()
+      if upload?
+        if upload.get('deleting')
+          @deleter.run(upload.get('fileInfo'))
+        else
+          @uploader.run(upload.get('file'))
       else
-        @uploader.run(@uploads.toJSON())
+        @set('status', 'waiting')
