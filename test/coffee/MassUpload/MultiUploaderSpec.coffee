@@ -118,19 +118,10 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
         it 'should call onProgress(progressEvent)', ->
           expect(spies.onProgress).toHaveBeenCalledWith({ loaded: 100, total: 5000 })
 
-        it 'should create the FileInfo object when it does not exist', ->
-          expect(uploads[0].fileInfo).not.toBeNull()
-          expect(uploads[0].fileInfo.loaded).toEqual(100)
-          expect(uploads[0].fileInfo.total).toEqual(1000)
-
         it 'should not accumulate loaded', ->
+          uploads[0].fileInfo = { loaded: 100, total: 1000 }
           userProgress({ loaded: 150, total: 1000 })
           expect(spies.onProgress).toHaveBeenCalledWith({ loaded: 150, total: 5000 })
-
-        it 'should adjust the FileInfo object when it does exist', ->
-          fileInfo = uploads[0].fileInfo
-          userProgress({ loaded: 150, total: 1000 })
-          expect(fileInfo.loaded).toEqual(150)
 
       describe 'on single file success', ->
         beforeEach ->

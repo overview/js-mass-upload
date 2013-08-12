@@ -34,9 +34,12 @@ var app = new MassUpload({
   doListFiles: function(progress, success, error) { ... },
   doUploadFile: function(file, progress, success, error) { ... },
   doDeleteFile: function(fileInfo, success, error) { ... },
-  onUploadConflictingFile: function(file, conflictingFileInfo, deleteFromServer, skip) { ... },
-  onStateChanged: function(state, massUpload) { ... }
+  onUploadConflictingFile: function(file, conflictingFileInfo, deleteFromServer, skip) { ... }
 });
+
+app.on('change:status', function() { ... });
+app.on('change:listFilesProgress', function() { ... });
+app.on('change:uploadProgress', function() { ... });
 
 $('form#mass-upload').prepend(app.el);
 ```

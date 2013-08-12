@@ -157,10 +157,7 @@ define [ './FileInfo' ], (FileInfo) ->
 
       if upload.fileInfo?
         progress.loaded -= upload.fileInfo.loaded
-      else
-        upload.fileInfo = FileInfo.fromFile(upload.file)
 
-      upload.fileInfo.loaded = progressEvent.loaded
       progress.loaded += progressEvent.loaded
 
       @callbacks.onSingleProgress?(upload, progressEvent)
