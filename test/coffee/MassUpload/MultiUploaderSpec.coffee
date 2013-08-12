@@ -23,8 +23,8 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
 
     describe 'with no uploads', ->
       beforeEach ->
-        subject = new MultiUploader([], doUpload, spies)
-        subject.run()
+        subject = new MultiUploader(doUpload, spies)
+        subject.run([])
 
       it 'should call onStart', ->
         expect(spies.onStart).toHaveBeenCalledWith()
@@ -43,7 +43,7 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
         expect(spies.onStop).toHaveBeenCalledWith()
 
       it 'should allow calling run() again', ->
-        expect(-> subject.run()).not.toThrow()
+        expect(-> subject.run([])).not.toThrow()
 
     describe 'with multiple unsent uploads', ->
       uploads = undefined
@@ -59,8 +59,8 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
         ]
         userAbort = jasmine.createSpy()
         doUpload.andReturn(userAbort)
-        subject = new MultiUploader(uploads, doUpload, spies)
-        subject.run()
+        subject = new MultiUploader(doUpload, spies)
+        subject.run(uploads)
         [ __, userProgress, userSuccess, userError ] = doUpload.mostRecentCall?.args ? []
 
       it 'should call doUpload with the first file', ->
@@ -102,11 +102,11 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
           expect(spies.onStop).toHaveBeenCalledWith()
 
         it 'should not allow running while aborting', ->
-          expect(-> subject.run()).toThrow('already running')
+          expect(-> subject.run([])).toThrow('already running')
 
         it 'should allow running after abort is complete', ->
           userSuccess()
-          expect(-> subject.run()).not.toThrow()
+          expect(-> subject.run([])).not.toThrow()
 
       describe 'on single file progress', ->
         beforeEach ->
@@ -159,7 +159,7 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
           expect(spies.onStop).toHaveBeenCalled()
 
         it 'should allow calling run() again', ->
-          expect(-> subject.run()).not.toThrow()
+          expect(-> subject.run([])).not.toThrow()
 
       describe 'on single file error', ->
         beforeEach ->
@@ -220,8 +220,8 @@ define [ 'MassUpload/MultiUploader' ], (MultiUploader) ->
         ]
         userAbort = 'some stupid return value'
         doUpload.andReturn(userAbort)
-        subject = new MultiUploader(uploads, doUpload, spies)
-        subject.run()
+        subject = new MultiUploader(doUpload, spies)
+        subject.run(uploads)
         [ __, userProgress, userSuccess, userError ] = doUpload.mostRecentCall?.args ? []
         subject.abort()
 

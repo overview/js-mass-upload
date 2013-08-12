@@ -31,7 +31,7 @@ define [ './FileInfo' ], (FileInfo) ->
   #
   # Usage:
   #
-  #     multiUploader = new MultiUploader(uploads, doUpload, {
+  #     multiUploader = new MultiUploader(doUpload, {
   #       onStartAbort: (upload) -> ...
   #       onSingleStart: (upload) -> ...
   #       onSingleStop: (upload) -> ...
@@ -45,7 +45,7 @@ define [ './FileInfo' ], (FileInfo) ->
   #       onErrors: ([ { upload: upload, errorDetail: errorDetail }, ... ])
   #     })
   #
-  #     multiUploader.run()
+  #     multiUploader.run(uploads)
   #
   # When run, MultiUploader:
   #
@@ -84,24 +84,23 @@ define [ './FileInfo' ], (FileInfo) ->
   #
   # Note: handle onStop(), not onErrors(). First of all, this protects you from
   # a faulty abort method (if abort does nothing, the file upload will actually
-  # succeed). Second, it is possible for no actual errors to have accumulated.
+  # succeed). Second, in a race condition abort may cause success, not error.
   class MultiUploader
-    constructor: (@uploads, @doUpload, @callbacks) ->
+    constructor: (@doUpload, @callbacks) ->
       @_reset()
-      @_refreshProgress()
 
     _reset: ->
       @_aborting = false
       @_cursor = null
       @_errors = null
-      @_upload = null
+      @_progress = { loaded: 0, total: 0 }
 
-    # Sets @_progress = { total: ?, loaded: ? } by iterating over @uploads
-    _refreshProgress: ->
+    # Sets @_progress = { total: ?, loaded: ? } by iterating over uploads
+    _refreshProgress: (uploads) ->
       total = 0
       loaded = 0
 
-      for upload in @uploads
+      for upload in uploads
         file = upload.file
         fileInfo = upload.fileInfo
         if file?
@@ -114,12 +113,14 @@ define [ './FileInfo' ], (FileInfo) ->
 
       @_progress = { total: total, loaded: loaded }
 
-    run: ->
+    run: (uploads) ->
       throw 'already running' if @_cursor?
+
+      @_refreshProgress(uploads)
 
       @callbacks.onStart?()
       
-      @_cursor = new Cursor(@uploads)
+      @_cursor = new Cursor(uploads)
       @_errors = []
 
       @_tick()

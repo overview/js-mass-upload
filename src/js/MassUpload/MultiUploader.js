@@ -26,28 +26,28 @@ define(['./FileInfo'], function(FileInfo) {
 
   })();
   return MultiUploader = (function() {
-    function MultiUploader(uploads, doUpload, callbacks) {
-      this.uploads = uploads;
+    function MultiUploader(doUpload, callbacks) {
       this.doUpload = doUpload;
       this.callbacks = callbacks;
       this._reset();
-      this._refreshProgress();
     }
 
     MultiUploader.prototype._reset = function() {
       this._aborting = false;
       this._cursor = null;
       this._errors = null;
-      return this._upload = null;
+      return this._progress = {
+        loaded: 0,
+        total: 0
+      };
     };
 
-    MultiUploader.prototype._refreshProgress = function() {
-      var file, fileInfo, loaded, total, upload, _i, _len, _ref;
+    MultiUploader.prototype._refreshProgress = function(uploads) {
+      var file, fileInfo, loaded, total, upload, _i, _len;
       total = 0;
       loaded = 0;
-      _ref = this.uploads;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        upload = _ref[_i];
+      for (_i = 0, _len = uploads.length; _i < _len; _i++) {
+        upload = uploads[_i];
         file = upload.file;
         fileInfo = upload.fileInfo;
         if (file != null) {
@@ -65,15 +65,16 @@ define(['./FileInfo'], function(FileInfo) {
       };
     };
 
-    MultiUploader.prototype.run = function() {
+    MultiUploader.prototype.run = function(uploads) {
       var _base;
       if (this._cursor != null) {
         throw 'already running';
       }
+      this._refreshProgress(uploads);
       if (typeof (_base = this.callbacks).onStart === "function") {
         _base.onStart();
       }
-      this._cursor = new Cursor(this.uploads);
+      this._cursor = new Cursor(uploads);
       this._errors = [];
       return this._tick();
     };
