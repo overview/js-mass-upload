@@ -7,6 +7,14 @@ define(['backbone', './FileInfo'], function(Backbone, FileInfo) {
       uploading: false,
       deleting: false
     },
+    initialize: function(attributes) {
+      var fileLike, id, _ref;
+      fileLike = (_ref = attributes.file) != null ? _ref : attributes.fileInfo;
+      id = fileLike.name;
+      return this.set({
+        id: id
+      });
+    },
     updateWithProgress: function(progressEvent) {
       var fileInfo;
       fileInfo = FileInfo.fromFile(this.get('file'));

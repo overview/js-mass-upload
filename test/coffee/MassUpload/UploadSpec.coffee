@@ -3,20 +3,22 @@ define [ 'MassUpload/Upload' ], (Upload) ->
     date1 = new Date('Mon, 12 Aug 2013 10:02:54 -0400')
     date2 = new Date('Mon, 12 Aug 2013 11:02:54 -0400')
 
-    it 'should have file, fileInfo, error, uploading and deleting attributes', ->
-      subject = new Upload({})
-      expect('file' of subject.attributes).toBe(true)
-      expect('fileInfo' of subject.attributes).toBe(true)
-      expect('uploading' of subject.attributes).toBe(true)
-      expect('deleting' of subject.attributes).toBe(true)
-      expect('error' of subject.attributes).toBe(true)
-
     describe 'starting with a File', ->
       file = { size: 10000, name: 'file.txt', lastModifiedDate: date1 }
       subject = undefined
 
       beforeEach ->
         subject = new Upload({ file: file })
+
+      it 'should have file, fileInfo, error, uploading and deleting attributes', ->
+        expect('file' of subject.attributes).toBe(true)
+        expect('fileInfo' of subject.attributes).toBe(true)
+        expect('uploading' of subject.attributes).toBe(true)
+        expect('deleting' of subject.attributes).toBe(true)
+        expect('error' of subject.attributes).toBe(true)
+
+      it 'should have an id of the filename', ->
+        expect(subject.id).toEqual('file.txt')
 
       it 'should have no fileInfo or error', ->
         expect(subject.get('fileInfo')).toBe(null)
@@ -45,6 +47,9 @@ define [ 'MassUpload/Upload' ], (Upload) ->
 
       beforeEach ->
         subject = new Upload({ fileInfo: fileInfo })
+
+      it 'should have an id of the filename', ->
+        expect(subject.id).toEqual('file.txt')
 
       it 'should have isFullyUploaded=true', ->
         expect(subject.isFullyUploaded()).toBe(true)

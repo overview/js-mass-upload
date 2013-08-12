@@ -34,6 +34,11 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
       uploading: false
       deleting: false
 
+    initialize: (attributes) ->
+      fileLike = attributes.file ? attributes.fileInfo
+      id = fileLike.name
+      @set({ id: id })
+
     # Updates the `fileInfo` object with the given `progressEvent`.
     #
     # `progressEvent` must have `loaded` and `total` properties.
