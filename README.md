@@ -13,7 +13,7 @@ MassUpload lets the developer decide. So you, being a clever developer, can uplo
 Usage
 -----
 
-First, include the library. You may use RequireJS:
+First, include the library. (It depends on [Backbone](http://backbonejs.org).) You may use [RequireJs](http://requirejs.org):
 
 ```javascript
 require([ 'path/to/mass-upload' ], function(MassUpload) { ... });
@@ -22,6 +22,8 @@ require([ 'path/to/mass-upload' ], function(MassUpload) { ... });
 Or, you can go the old-fashioned route in your HTML:
 
 ```html
+<script src="path/to/underscore-1.5.1.js"></script>
+<script src="path/to/backbone-1.0.0.js"></script>
 <script src="path/to/mass-upload.no-require.js"></script>
 ```
 
