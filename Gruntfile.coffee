@@ -90,7 +90,7 @@ module.exports = (grunt) ->
 
   # karma:unit takes a moment to spin up
   grunt.registerTask 'wait-for-karma', 'Wait until Karma server is running', ->
-    setTimeout(@async(), 1000)
+    setTimeout(@async(), 3000)
 
   grunt.registerTask('default', [ 'coffee:compile', 'requirejs' ])
   grunt.registerTask('test', [ 'coffee', 'karma:continuous' ])
