@@ -8,7 +8,7 @@ for (var file in window.__karma__.files) {
 }
 
 requirejs.config({
-    // Karma serves files from '/base'
+  // Karma serves files from '/base'
   baseUrl: '/base/src/js',
 
   shim: {
@@ -21,8 +21,8 @@ requirejs.config({
     }
   },
   paths: {
-    'backbone': '/base/bower_components/backbone/backbone',
-    'underscore': '/base/bower_components/underscore/underscore'
+    'backbone': '../../bower_components/backbone/backbone',
+    'underscore': '../../bower_components/underscore/underscore'
   },
 
   // ask Require.js to load these files (all our tests)
