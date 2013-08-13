@@ -141,9 +141,11 @@ define [
       if status == 'uploading' || status == 'uploading-error'
         # Either @uploader or @deleter is working. We want them to stop as
         # soon as possible so we can adjust to new priorities.
-        @uploader.abort()
+
+        @uploader.abort() # in case it's the uploader
+        # there is no way to abort a delete; that should be fine, as it's quick
       else
-        # Neither @uploader nor @deleter is working, so let's kick one off
+        # Neither @uploader nor @deleter is working ... and now we want one to
         @_tick()
 
     _onUploadRemoved: (upload) ->

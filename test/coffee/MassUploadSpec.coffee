@@ -96,13 +96,14 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
         it 'should have status=waiting', ->
           expect(subject.get('status')).toEqual('waiting')
 
+      it 'should call lister.run', ->
+        subject.fetchFileInfosFromServer()
+        expect(lister.run).toHaveBeenCalledWith()
+
       describe 'when listing files', ->
         beforeEach ->
           lister.run.andCallFake(-> lister.callbacks.onStart())
           subject.fetchFileInfosFromServer()
-
-        it 'should call lister.run', ->
-          expect(lister.run).toHaveBeenCalledWith()
 
         it 'should have status=listing-files', ->
           expect(subject.get('status')).toEqual('listing-files')
@@ -117,13 +118,10 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
           it 'should add to uploads', ->
             expect(uploads.addFileInfos).toHaveBeenCalledWith(fileInfos)
 
-        describe 'on progress', ->
+        it 'should set listFilesProgress on progress', ->
           progress = { loaded: 1000, total: 10000 }
-
-          beforeEach -> lister.callbacks.onProgress(progress)
-
-          it 'should set listFilesProgress', ->
-            expect(subject.get('listFilesProgress')).toEqual(progress)
+          lister.callbacks.onProgress(progress)
+          expect(subject.get('listFilesProgress')).toEqual(progress)
 
         describe 'on error', ->
           beforeEach ->
@@ -251,3 +249,16 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
               it 'should continue with uploading', ->
                 expect(uploader.run).toHaveBeenCalled()
+
+      describe 'when finishing all uploads', ->
+        beforeEach ->
+          subject.uploads.reset([
+            { file: file1, fileInfo: fileInfo1, error: null }
+          ])
+          uploader.callbacks.onStart(file1)
+          uploads.next = jasmine.createSpy('uploads.next').andReturn(null)
+          uploader.callbacks.onSuccess(file1)
+          uploader.callbacks.onStop(file1)
+
+        it 'should set status=waiting', ->
+          expect(subject.get('status')).toEqual('waiting')
