@@ -1,6 +1,7 @@
 define(['backbone', './Upload'], function(Backbone, Upload) {
   return Backbone.Collection.extend({
     model: Upload,
+    comparator: 'id',
     addFiles: function(files) {
       var file, uploads;
       uploads = (function() {
@@ -30,6 +31,33 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
         return _results;
       })();
       return this._addWithMerge(uploads);
+    },
+    next: function() {
+      var firstDeleting, firstUnfinished, firstUnstarted, firstUploading;
+      firstDeleting = null;
+      firstUploading = null;
+      firstUnfinished = null;
+      firstUnstarted = null;
+      this.each(function(upload) {
+        var file, fileInfo;
+        file = upload.get('file');
+        fileInfo = upload.get('fileInfo');
+        if (upload.get('error') == null) {
+          if (upload.get('deleting')) {
+            firstDeleting || (firstDeleting = upload);
+          }
+          if (upload.get('uploading')) {
+            firstUploading || (firstUploading = upload);
+          }
+          if (file && fileInfo && fileInfo.loaded < fileInfo.total) {
+            firstUnfinished || (firstUnfinished = upload);
+          }
+          if (file && !fileInfo) {
+            return firstUnstarted || (firstUnstarted = upload);
+          }
+        }
+      });
+      return firstDeleting || firstUploading || firstUnfinished || firstUnstarted;
     },
     _addWithMerge: function(uploads) {
       var existingUpload, file, fileInfo, toAdd, upload, _i, _len;
