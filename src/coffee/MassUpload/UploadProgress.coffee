@@ -47,7 +47,7 @@ define [ 'backbone' ], (Backbone) ->
         reset: reset
 
       for eventName, callback of events
-        collection.on(eventName, callback)
+        @listenTo(collection, eventName, callback)
 
       reset()
 

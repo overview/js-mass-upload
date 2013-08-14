@@ -68,13 +68,13 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
           return _this._onDeleterStop(fileInfo);
         }
       };
-      this.uploads.on('add change:file', function(upload) {
+      this.listenTo(this.uploads, 'add change:file', function(upload) {
         return _this._onUploadAdded(upload);
       });
-      this.uploads.on('change:deleting', function(upload) {
+      this.listenTo(this.uploads, 'change:deleting', function(upload) {
         return _this._onUploadDeleted(upload);
       });
-      this.uploads.on('remove', function(upload) {
+      this.listenTo(this.uploads, 'remove', function(upload) {
         return _this._onUploadRemoved(upload);
       });
       uploadProgress = new UploadProgress({
@@ -85,7 +85,7 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
           uploadProgress: uploadProgress.pick('loaded', 'total')
         });
       };
-      uploadProgress.on('change', resetUploadProgress);
+      this.listenTo(uploadProgress, 'change', resetUploadProgress);
       return resetUploadProgress();
     },
     fetchFileInfosFromServer: function() {

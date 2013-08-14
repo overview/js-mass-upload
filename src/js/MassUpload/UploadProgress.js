@@ -64,7 +64,7 @@ define(['backbone'], function(Backbone) {
       };
       for (eventName in events) {
         callback = events[eventName];
-        collection.on(eventName, callback);
+        this.listenTo(collection, eventName, callback);
       }
       reset();
       return void 0;

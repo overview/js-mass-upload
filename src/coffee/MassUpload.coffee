@@ -105,15 +105,15 @@ define [
         onError: (fileInfo, errorDetail) => @_onDeleterError(fileInfo, errorDetail)
         onStop: (fileInfo) => @_onDeleterStop(fileInfo)
 
-      @uploads.on('add change:file', (upload) => @_onUploadAdded(upload))
-      @uploads.on('change:deleting', (upload) => @_onUploadDeleted(upload))
-      @uploads.on('remove', (upload) => @_onUploadRemoved(upload))
+      @listenTo(@uploads, 'add change:file', (upload) => @_onUploadAdded(upload))
+      @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
+      @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
 
       # Make @get('uploadProgress') a flat object, not a Backbone.Model
       uploadProgress = new UploadProgress({ collection: @uploads })
       resetUploadProgress = =>
         @set(uploadProgress: uploadProgress.pick('loaded', 'total'))
-      uploadProgress.on('change', resetUploadProgress)
+      @listenTo(uploadProgress, 'change', resetUploadProgress)
       resetUploadProgress()
 
     fetchFileInfosFromServer: ->
