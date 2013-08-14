@@ -1,4 +1,4 @@
-define [ 'backbone', 'underscore', 'humanReadableSize' ], (Backbone, _, humanReadableSize) ->
+define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanReadableSize) ->
   progressToText = (progress) ->
     "#{humanReadableSize(progress.loaded)} / #{humanReadableSize(progress.total)}"
 

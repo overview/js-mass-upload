@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'humanReadableSize'], function(Backbone, _, humanReadableSize) {
+define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, humanReadableSize) {
   var liToEls, progressToText, uploadToStatusAndMessage;
   progressToText = function(progress) {
     return "" + (humanReadableSize(progress.loaded)) + " / " + (humanReadableSize(progress.total));

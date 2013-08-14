@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'humanReadableSize'], function(Backbone, _, humanReadableSize) {
+define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, humanReadableSize) {
   return Backbone.View.extend({
     className: 'list-files-progress',
     massUploadProperty: '',

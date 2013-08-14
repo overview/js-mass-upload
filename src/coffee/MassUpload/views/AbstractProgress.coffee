@@ -1,4 +1,4 @@
-define [ 'backbone', 'underscore', 'humanReadableSize' ], (Backbone, _, humanReadableSize) ->
+define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanReadableSize) ->
   # Shows a progress bar (must be extended)
   Backbone.View.extend
     className: 'list-files-progress'
