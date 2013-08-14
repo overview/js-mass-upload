@@ -400,7 +400,7 @@ define('MassUpload/State',[],function() {
   })();
 });
 
-define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/FileLister', './MassUpload/FileUploader', './MassUpload/FileDeleter', './MassUpload/State'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State) {
+define('MassUpload',['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'MassUpload/FileUploader', 'MassUpload/FileDeleter', 'MassUpload/State'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State) {
   return Backbone.Model.extend({
     defaults: function() {
       return {
@@ -584,4 +584,8 @@ define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/
       }
     }
   });
+});
+
+define('mass-upload',['MassUpload'], function(MassUpload) {
+  return MassUpload;
 });

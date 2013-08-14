@@ -1,10 +1,10 @@
 define [
   'backbone'
-  './MassUpload/UploadCollection'
-  './MassUpload/FileLister'
-  './MassUpload/FileUploader'
-  './MassUpload/FileDeleter'
-  './MassUpload/State'
+  'MassUpload/UploadCollection'
+  'MassUpload/FileLister'
+  'MassUpload/FileUploader'
+  'MassUpload/FileDeleter'
+  'MassUpload/State'
 ], (
   Backbone
   UploadCollection

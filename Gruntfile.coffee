@@ -51,13 +51,13 @@ module.exports = (grunt) ->
 
       development:
         options:
-          name: 'MassUpload'
+          name: 'mass-upload'
           optimize: 'none'
           out: 'dist/mass-upload.js'
 
       minified:
         options:
-          name: 'MassUpload'
+          name: 'mass-upload'
           optimize: 'uglify2'
           out: 'dist/mass-upload.min.js'
 
@@ -90,10 +90,10 @@ module.exports = (grunt) ->
         spawn: false
       coffee:
         files: [ 'src/coffee/**/*.coffee' ]
-        tasks: [ 'coffee:compile', 'karma:unit:run' ]
+        tasks: [ 'coffee:src', 'karma:unit:run' ]
       'coffee-demo':
         files: [ 'demo/coffee/**/*.coffee' ]
-        tasks: [ 'coffee:demo:compile' ]
+        tasks: [ 'coffee:demo' ]
       'coffee-test':
         files: [ 'test/coffee/**/*.coffee' ]
         tasks: [ 'coffee:test', 'karma:unit:run' ]

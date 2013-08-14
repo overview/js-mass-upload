@@ -1,4 +1,4 @@
-define(['backbone', './MassUpload/UploadCollection', './MassUpload/FileLister', './MassUpload/FileUploader', './MassUpload/FileDeleter', './MassUpload/State'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State) {
+define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'MassUpload/FileUploader', 'MassUpload/FileDeleter', 'MassUpload/State'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State) {
   return Backbone.Model.extend({
     defaults: function() {
       return {
