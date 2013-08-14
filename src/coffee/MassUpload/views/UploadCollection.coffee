@@ -45,6 +45,7 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
     className: 'upload-collection'
 
     events:
+      'click .retry': '_onRetry'
       'click .delete': '_onDelete'
       'dragover': '_onDragover'
       'drop': '_onDrop'

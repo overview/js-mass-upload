@@ -50,6 +50,7 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
   return Backbone.View.extend({
     className: 'upload-collection',
     events: {
+      'click .retry': '_onRetry',
       'click .delete': '_onDelete',
       'dragover': '_onDragover',
       'drop': '_onDrop'

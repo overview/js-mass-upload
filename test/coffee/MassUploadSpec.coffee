@@ -266,7 +266,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
       describe 'when finishing all uploads', ->
         beforeEach ->
-          subject.uploads.reset([
+          uploads.reset([
             { file: file1, fileInfo: fileInfo1, error: null }
           ])
           uploader.callbacks.onStart(file1)
@@ -276,3 +276,13 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
         it 'should set status=waiting', ->
           expect(subject.get('status')).toEqual('waiting')
+
+      describe 'with a broken upload', ->
+        beforeEach ->
+          uploads.reset([
+            { file: file1, fileInfo: fileInfo1, error: 'an error' }
+          ])
+
+        it 'should allow retrying', ->
+          subject.retryUpload(uploads.at(0))
+          expect(uploader.run).toHaveBeenCalled()

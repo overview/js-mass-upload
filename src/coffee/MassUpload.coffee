@@ -105,7 +105,7 @@ define [
         onError: (fileInfo, errorDetail) => @_onDeleterError(fileInfo, errorDetail)
         onStop: (fileInfo) => @_onDeleterStop(fileInfo)
 
-      @listenTo(@uploads, 'add change:file', (upload) => @_onUploadAdded(upload))
+      @listenTo(@uploads, 'add change:file change:error', (upload) => @_onUploadAdded(upload))
       @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
       @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
 
@@ -121,6 +121,9 @@ define [
 
     retryListFiles: ->
       @fetchFileInfosFromServer()
+
+    retryUpload: (upload) ->
+      upload.set('error', null)
 
     addFiles: (files) ->
       @uploads.addFiles(files)
@@ -163,11 +166,7 @@ define [
 
     _onUploadDeleted: (upload) ->
       @_removedUploads.push(upload)
-      status = @get('status')
-      if status == 'uploading' || status == 'uploading-error'
-        @uploader.abort()
-      else
-        @_tick()
+      @_forceBestTick()
 
     _onUploaderStart: (file) ->
       @set('status', 'uploading')
@@ -207,8 +206,11 @@ define [
     _onDeleterStop: (fileInfo) ->
       @_tick()
 
+    # Looks for a task
     _tick: ->
       upload = @uploads.next()
+      @_currentUpload = upload
+
       if upload?
         if upload.get('deleting')
           @deleter.run(upload.get('fileInfo'))
@@ -216,3 +218,13 @@ define [
           @uploader.run(upload.get('file'))
       else
         @set('status', 'waiting')
+
+    # If ticking, aborts and ticks again to work on the highest-priority task
+    _forceBestTick: ->
+      upload = @uploads.next()
+      if upload != @_currentUpload
+        status = @get('status')
+        if status == 'uploading' || status == 'uploading-error'
+          @uploader.abort()
+        else
+          @_tick()

@@ -68,7 +68,7 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
           return _this._onDeleterStop(fileInfo);
         }
       };
-      this.listenTo(this.uploads, 'add change:file', function(upload) {
+      this.listenTo(this.uploads, 'add change:file change:error', function(upload) {
         return _this._onUploadAdded(upload);
       });
       this.listenTo(this.uploads, 'change:deleting', function(upload) {
@@ -93,6 +93,9 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
     },
     retryListFiles: function() {
       return this.fetchFileInfosFromServer();
+    },
+    retryUpload: function(upload) {
+      return upload.set('error', null);
     },
     addFiles: function(files) {
       return this.uploads.addFiles(files);
@@ -127,14 +130,8 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
     },
     _onUploadRemoved: function(upload) {},
     _onUploadDeleted: function(upload) {
-      var status;
       this._removedUploads.push(upload);
-      status = this.get('status');
-      if (status === 'uploading' || status === 'uploading-error') {
-        return this.uploader.abort();
-      } else {
-        return this._tick();
-      }
+      return this._forceBestTick();
     },
     _onUploaderStart: function(file) {
       var upload;
@@ -181,6 +178,7 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
     _tick: function() {
       var upload;
       upload = this.uploads.next();
+      this._currentUpload = upload;
       if (upload != null) {
         if (upload.get('deleting')) {
           return this.deleter.run(upload.get('fileInfo'));
@@ -189,6 +187,18 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
         }
       } else {
         return this.set('status', 'waiting');
+      }
+    },
+    _forceBestTick: function() {
+      var status, upload;
+      upload = this.uploads.next();
+      if (upload !== this._currentUpload) {
+        status = this.get('status');
+        if (status === 'uploading' || status === 'uploading-error') {
+          return this.uploader.abort();
+        } else {
+          return this._tick();
+        }
       }
     }
   });
