@@ -1,24 +1,85 @@
+@superPaleColor: #f4f4f4;
+@paleColor: #b4b3b3;
 @mutedColor: gray;
+@errorColor: #c73333;
+
+.upload-error() {
+  &, .message {
+    color: @errorColor;
+  }
+
+  progress {
+    .simple-progress(@superPaleColor, @errorColor);
+  }
+}
 
 ul.uploads {
   display: block;
   list-style: none;
   margin: 0;
   padding: 0;
-}
 
-li.upload {
-  display: inline-block;
-  overflow: hidden;
-  width: 15em;
-  height: 3em;
-  border: 1px solid gray;
-  padding: .5em;
-  margin: 0 .5em .5em 0;
+  column-width: 15em;
+  -moz-column-width: 15em;
+  -webkit-column-width: 15em;
 
-  .progress {
-    font-size: .8em;
-    color: @mutedColor;
+  &>li {
+    display: inline-block;
+    overflow: hidden;
+    box-sizing: border-box;
+    width: 15em;
+    height: 5em;
+    border: 1px solid @superPaleColor;
+    padding: .5em;
+    transition: opacity .5s;
+
+    a {
+      float: right;
+      margin-left: .5em;
+      font-size: .8em;
+      line-height: 1.25em;
+      text-decoration: none;
+    }
+
+    h3 {
+      font: inherit;
+      line-height: 1;
+      margin: 0;
+      padding: 0 0 .5em;
+    }
+
+    .status {
+      color: @mutedColor;
+
+      * {
+        font-size: .8em;
+        line-height: 1.25;
+      }
+
+      .message {
+        display: block;
+        padding-top: .5em;
+      }
+    }
+
+    &.deleting {
+      opacity: .7;
+      progress, .retry, .delete, .text, .size { display: none; }
+    }
+    &.must-reselect {
+      .upload-error();
+      .size, .retry { display: none; }
+    }
+    &.error {
+      .upload-error();
+      .size { display: none; }
+    }
+    &.uploading {
+      .size, .retry { display: none; }
+    }
+    &.waiting, &.uploaded {
+      progress, .retry, .text { display: none; }
+    }
   }
 }
 
@@ -61,7 +122,7 @@ li.upload {
 
 /* Now, regular progress style for this page */
 progress {
-  .simple-progress(#f4f4f4, #b4b3b3);
+  .simple-progress(@superPaleColor, @paleColor);
 
   display: inline-block;
   width: 30%;
@@ -71,5 +132,30 @@ progress {
   box-sizing: border-box;
   border-radius: .2em;
   overflow: hidden;
-  border: 1px solid #f4f4f4;
+  border: 1px solid @superPaleColor;
+}
+
+.mass-upload {
+  .list-files-progress {
+    transition: height .5s, opacity .5s;
+    overflow: hidden;
+    height: 0;
+    opacity: 0;
+  }
+  &[data-status="listing-files"] .list-files-progress,
+  &[data-status="listing-files-error"] .list-files-progress {
+    height: 2em;
+    opacity: 1;
+  }
+
+  .upload-progress {
+    transition: height .5s, opacity .5s;
+    height: 0;
+    opacity: 0;
+  }
+  &[data-status="uploading"] .upload-progress,
+  &[data-status="uploading-error"] .upload-progress {
+    height: 2em;
+    opacity: 1;
+  }
 }

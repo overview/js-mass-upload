@@ -65,7 +65,8 @@ define [
   #   should be sent to the server, MassUpload aborts uploading, deletes
   #   unwanted files, and uploads un-uploaded files.)
   # * If stuck in `listing-files-error` status, call retryListFiles().
-  # * To remove upload/delete errors, call retry(upload) or retryAllUploads().
+  # * To remove upload/delete errors, call retryUpload(upload) or
+  #   retryAllUploads().
   Backbone.Model.extend
     defaults: ->
       status: 'waiting'

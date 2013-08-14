@@ -4,8 +4,6 @@ define [ 'jquery', 'mass-upload', 'upload-logic', 'MassUploadView' ], ($, MassUp
 
   massUpload = new MassUpload(options)
 
-  view = new MassUploadView(model: massUpload)
-
-  $('.files').append(view.el)
+  new MassUploadView(model: massUpload, el: $('.mass-upload'))
 
   massUpload.fetchFileInfosFromServer()
