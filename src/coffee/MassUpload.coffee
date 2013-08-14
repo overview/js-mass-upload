@@ -159,7 +159,7 @@ define [
         @_tick()
 
     _onUploadRemoved: (upload) ->
-      @uploads.remove(upload)
+      # nothing
 
     _onUploadDeleted: (upload) ->
       @_removedUploads.push(upload)
@@ -197,7 +197,8 @@ define [
       @set('status', 'uploading')
 
     _onDeleterSuccess: (fileInfo) ->
-      @uploads.remove(fileInfo)
+      upload = @uploads.get(fileInfo.name)
+      @uploads.remove(upload)
 
     _onDeleterError: (fileInfo, errorDetail) ->
       upload = @uploads.get(fileInfo.name)

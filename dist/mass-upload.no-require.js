@@ -453,6 +453,20 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
       fileInfo.total = progressEvent.total;
       return this.set('fileInfo', fileInfo);
     },
+    getProgress: function() {
+      var file, fileInfo;
+      if (((fileInfo = this.get('fileInfo')) != null) && !this.hasConflict()) {
+        return {
+          loaded: fileInfo.loaded,
+          total: fileInfo.total
+        };
+      } else if ((file = this.get('file')) != null) {
+        return {
+          loaded: 0,
+          total: file.size
+        };
+      }
+    },
     isFullyUploaded: function() {
       var error, fileInfo;
       fileInfo = this.get('fileInfo');
@@ -808,7 +822,81 @@ define('MassUpload/State',[],function() {
   })();
 });
 
-define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/FileLister', './MassUpload/FileUploader', './MassUpload/FileDeleter', './MassUpload/State'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State) {
+define('MassUpload/UploadProgress',['backbone'], function(Backbone) {
+  return Backbone.Model.extend({
+    defaults: {
+      loaded: 0,
+      total: 0
+    },
+    initialize: function() {
+      var add, adjust, callback, change, cidToLastKnownProgress, collection, eventName, events, remove, reset,
+        _this = this;
+      collection = this.get('collection');
+      if (collection == null) {
+        throw 'Must initialize UploadProgress with `collection`, an UploadCollection';
+      }
+      adjust = function(dLoaded, dTotal) {
+        _this.set({
+          loaded: _this.get('loaded') + dLoaded,
+          total: _this.get('total') + dTotal
+        });
+        return void 0;
+      };
+      cidToLastKnownProgress = {};
+      add = function(model) {
+        var progress;
+        progress = model.getProgress();
+        adjust(progress.loaded, progress.total);
+        return cidToLastKnownProgress[model.cid] = progress;
+      };
+      remove = function(model) {
+        var progress;
+        progress = cidToLastKnownProgress[model.cid];
+        adjust(-progress.loaded, -progress.total);
+        return delete cidToLastKnownProgress[model.cid];
+      };
+      change = function(model) {
+        var newProgress, oldProgress;
+        oldProgress = cidToLastKnownProgress[model.cid];
+        if (oldProgress != null) {
+          newProgress = model.getProgress();
+          adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
+          return cidToLastKnownProgress[model.cid] = newProgress;
+        }
+      };
+      reset = function() {
+        var progress;
+        cidToLastKnownProgress = {};
+        progress = {
+          loaded: 0,
+          total: 0
+        };
+        _this.get('collection').each(function(model) {
+          var modelProgress;
+          modelProgress = model.getProgress();
+          cidToLastKnownProgress[model.cid] = modelProgress;
+          progress.loaded += modelProgress.loaded;
+          return progress.total += modelProgress.total;
+        });
+        return _this.set(progress);
+      };
+      events = {
+        add: add,
+        remove: remove,
+        change: change,
+        reset: reset
+      };
+      for (eventName in events) {
+        callback = events[eventName];
+        collection.on(eventName, callback);
+      }
+      reset();
+      return void 0;
+    }
+  });
+});
+
+define('MassUpload',['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'MassUpload/FileUploader', 'MassUpload/FileDeleter', 'MassUpload/State', 'MassUpload/UploadProgress'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State, UploadProgress) {
   return Backbone.Model.extend({
     defaults: function() {
       return {
@@ -824,7 +912,7 @@ define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/
       return Backbone.Model.call(this, {}, options);
     },
     initialize: function(attributes, options) {
-      var _ref, _ref1, _ref2, _ref3,
+      var resetUploadProgress, uploadProgress, _ref, _ref1, _ref2, _ref3,
         _this = this;
       this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
       this.lister = (_ref1 = options != null ? options.lister : void 0) != null ? _ref1 : new FileLister(options.doListFiles);
@@ -884,9 +972,19 @@ define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/
       this.uploads.on('change:deleting', function(upload) {
         return _this._onUploadDeleted(upload);
       });
-      return this.uploads.on('remove', function(upload) {
+      this.uploads.on('remove', function(upload) {
         return _this._onUploadRemoved(upload);
       });
+      uploadProgress = new UploadProgress({
+        collection: this.uploads
+      });
+      resetUploadProgress = function() {
+        return _this.set({
+          uploadProgress: uploadProgress.pick('loaded', 'total')
+        });
+      };
+      uploadProgress.on('change', resetUploadProgress);
+      return resetUploadProgress();
     },
     fetchFileInfosFromServer: function() {
       return this.lister.run();
@@ -925,9 +1023,7 @@ define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/
         return this._tick();
       }
     },
-    _onUploadRemoved: function(upload) {
-      return this.uploads.remove(upload);
-    },
+    _onUploadRemoved: function(upload) {},
     _onUploadDeleted: function(upload) {
       var status;
       this._removedUploads.push(upload);
@@ -968,7 +1064,9 @@ define('MassUpload',['backbone', './MassUpload/UploadCollection', './MassUpload/
       return this.set('status', 'uploading');
     },
     _onDeleterSuccess: function(fileInfo) {
-      return this.uploads.remove(fileInfo);
+      var upload;
+      upload = this.uploads.get(fileInfo.name);
+      return this.uploads.remove(upload);
     },
     _onDeleterError: function(fileInfo, errorDetail) {
       var upload;

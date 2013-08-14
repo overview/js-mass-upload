@@ -125,9 +125,7 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
         return this._tick();
       }
     },
-    _onUploadRemoved: function(upload) {
-      return this.uploads.remove(upload);
-    },
+    _onUploadRemoved: function(upload) {},
     _onUploadDeleted: function(upload) {
       var status;
       this._removedUploads.push(upload);
@@ -168,7 +166,9 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
       return this.set('status', 'uploading');
     },
     _onDeleterSuccess: function(fileInfo) {
-      return this.uploads.remove(fileInfo);
+      var upload;
+      upload = this.uploads.get(fileInfo.name);
+      return this.uploads.remove(upload);
     },
     _onDeleterError: function(fileInfo, errorDetail) {
       var upload;

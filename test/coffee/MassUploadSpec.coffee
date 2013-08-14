@@ -240,8 +240,8 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
             describe 'when delete is complete', ->
               beforeEach ->
-                deleter.callbacks.onSuccess(uploadToDelete)
-                deleter.callbacks.onStop(uploadToDelete)
+                deleter.callbacks.onSuccess(fileInfo1)
+                deleter.callbacks.onStop(fileInfo1)
 
               it 'should remove the upload from the list', ->
                 expect(uploads.length).toEqual(2)
