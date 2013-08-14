@@ -4,7 +4,10 @@ requirejs.config
     backbone: '../../bower_components/backbone/backbone'
     underscore: '../../bower_components/underscore/underscore'
     jquery: '../../bower_components/jquery/jquery'
-    'mass-upload': '../../dist/mass-upload'
+    'mass-upload': '../../src/js/mass-upload'
+  map:
+    '*':
+      MassUpload: '../../src/js/MassUpload'
   shim:
     backbone:
       deps: [ 'jquery', 'underscore' ]

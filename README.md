@@ -235,8 +235,9 @@ To build and contribute:
 4. `grunt develop` to start developing.
 5. Write tests in `test/coffee`. In the terminal that's running `grunt develop`, you'll see new failures.
 6. Once you've created a test failure, edit code in `src/coffee`, until the terminal that's running `grunt develop` comes up green.
-7. Run `grunt` to populate the `dist/` directory.
-8. commit and create a pull request.
+7. Browse to http://localhost:8080/demo/ to see your code in action.
+8. Run `grunt` to populate the `dist/` directory.
+9. commit and create a pull request.
 
 License
 -------

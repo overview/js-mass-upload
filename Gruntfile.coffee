@@ -34,7 +34,7 @@ module.exports = (grunt) ->
     connect:
       server:
         options:
-          port: 9001
+          port: 8080
           base: '.'
 
     requirejs:
@@ -132,5 +132,4 @@ module.exports = (grunt) ->
 
   grunt.registerTask('default', [ 'coffee:src', 'requirejs' ])
   grunt.registerTask('test', [ 'coffee', 'karma:continuous' ])
-  grunt.registerTask('develop', [ 'coffee', 'karma:unit', 'wait-for-karma', 'karma:unit:run', 'watch' ])
-  grunt.registerTask('server', [ 'coffee', 'requirejs:development', 'less:demo', 'connect:server', 'watch' ])
+  grunt.registerTask('develop', [ 'coffee', 'less:demo', 'karma:unit', 'wait-for-karma', 'karma:unit:run', 'connect:server', 'watch' ])
