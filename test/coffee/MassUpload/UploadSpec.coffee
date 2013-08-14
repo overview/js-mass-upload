@@ -24,6 +24,9 @@ define [ 'MassUpload/Upload' ], (Upload) ->
         expect(subject.get('fileInfo')).toBe(null)
         expect(subject.get('error')).toBe(null)
 
+      it 'should have getProgress() return 0/size', ->
+        expect(subject.getProgress()).toEqual({ loaded: 0, total: file.size })
+
       describe 'updateWithProgress', ->
         beforeEach ->
           subject.set('uploading', true)
@@ -40,6 +43,9 @@ define [ 'MassUpload/Upload' ], (Upload) ->
         it 'should have isFullyUploaded=false because loaded != total', ->
           subject.set('uploading', false)
           expect(subject.isFullyUploaded()).toBe(false)
+
+        it 'should have getProgress() return the progress', ->
+          expect(subject.getProgress()).toEqual({ loaded: 2000, total: 10000 })
 
     describe 'starting with a completed FileInfo', ->
       fileInfo = { loaded: 10000, total: 10000, name: 'file.txt', lastModifiedDate: date1 }
@@ -68,6 +74,9 @@ define [ 'MassUpload/Upload' ], (Upload) ->
       it 'should have isFullyUploaded=false', ->
         expect(subject.isFullyUploaded()).toBe(false)
 
+      it 'should have getProgress() return the progress', ->
+        expect(subject.getProgress()).toEqual({ loaded: 2000, total: 10000 })
+
     describe 'with compatible File and FileInfo', ->
       file = { size: 10000, name: 'file.txt', lastModifiedDate: date1 }
       fileInfo = { loaded: 10000, total: 10000, name: 'file.txt', lastModifiedDate: date1 }
@@ -84,6 +93,15 @@ define [ 'MassUpload/Upload' ], (Upload) ->
       it 'should have isFullyUploaded=false if uploading=true', ->
         subject.set('uploading', true)
         expect(subject.isFullyUploaded()).toBe(false)
+
+    describe 'with incompatible File and FileInfo', ->
+      file = { size: 12000, name: 'file.txt', lastModifiedDate: date2 }
+      fileInfo = { loaded: 10000, total: 10000, name: 'file.txt', lastModifiedDate: date1 }
+      subject = undefined
+      beforeEach -> subject = new Upload({ file: file, fileInfo: fileInfo })
+
+      it 'should have getProgress() return the file progress, not the fileInfo progress', ->
+        expect(subject.getProgress()).toEqual({ loaded: 0, total: 12000 })
 
     describe 'hasConflict', ->
       subject = undefined

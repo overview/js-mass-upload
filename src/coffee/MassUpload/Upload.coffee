@@ -49,6 +49,13 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
       fileInfo.total = progressEvent.total
       @set('fileInfo', fileInfo)
 
+    # Returns a progress object with `loaded` and `total` properties.
+    getProgress: ->
+      if (fileInfo = @get('fileInfo'))? && !@hasConflict()
+        { loaded: fileInfo.loaded, total: fileInfo.total }
+      else if (file = @get('file'))?
+        { loaded: 0, total: file.size }
+
     # True iff the file has been successfully uploaded.
     isFullyUploaded: ->
       fileInfo = @get('fileInfo')

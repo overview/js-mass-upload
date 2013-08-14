@@ -22,6 +22,20 @@ define(['backbone', './FileInfo'], function(Backbone, FileInfo) {
       fileInfo.total = progressEvent.total;
       return this.set('fileInfo', fileInfo);
     },
+    getProgress: function() {
+      var file, fileInfo;
+      if (((fileInfo = this.get('fileInfo')) != null) && !this.hasConflict()) {
+        return {
+          loaded: fileInfo.loaded,
+          total: fileInfo.total
+        };
+      } else if ((file = this.get('file')) != null) {
+        return {
+          loaded: 0,
+          total: file.size
+        };
+      }
+    },
     isFullyUploaded: function() {
       var error, fileInfo;
       fileInfo = this.get('fileInfo');
