@@ -38,6 +38,7 @@
     "grunt-karma": "~0.6.1",
     "grunt-contrib-watch": "~0.5.1",
     "karma-growl-reporter": "~0.1.0",
-    "grunt-contrib-connect": "~0.3.0"
+    "grunt-contrib-connect": "~0.3.0",
+    "grunt-contrib-less": "~0.7.0"
   }
 }

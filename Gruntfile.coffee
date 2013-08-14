@@ -26,6 +26,11 @@ module.exports = (grunt) ->
         dest: 'test/js'
         ext: '.js'
 
+    less:
+      demo:
+        files:
+          'demo/css/style.css': 'demo/less/style.less'
+
     connect:
       server:
         options:
@@ -97,9 +102,13 @@ module.exports = (grunt) ->
       'coffee-test':
         files: [ 'test/coffee/**/*.coffee' ]
         tasks: [ 'coffee:test', 'karma:unit:run' ]
+      'less-demo':
+        files: [ 'demo/less/**/*.less' ]
+        tasks: [ 'less:demo' ]
 
   grunt.loadNpmTasks('grunt-contrib-connect')
   grunt.loadNpmTasks('grunt-contrib-coffee')
+  grunt.loadNpmTasks('grunt-contrib-less')
   grunt.loadNpmTasks('grunt-contrib-watch')
   grunt.loadNpmTasks('grunt-requirejs')
   grunt.loadNpmTasks('grunt-karma')
@@ -124,4 +133,4 @@ module.exports = (grunt) ->
   grunt.registerTask('default', [ 'coffee:src', 'requirejs' ])
   grunt.registerTask('test', [ 'coffee', 'karma:continuous' ])
   grunt.registerTask('develop', [ 'coffee', 'karma:unit', 'wait-for-karma', 'karma:unit:run', 'watch' ])
-  grunt.registerTask('server', [ 'coffee', 'requirejs:development', 'connect:server', 'watch' ])
+  grunt.registerTask('server', [ 'coffee', 'requirejs:development', 'less:demo', 'connect:server', 'watch' ])

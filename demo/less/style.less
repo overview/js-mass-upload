@@ -1,0 +1,75 @@
+@mutedColor: gray;
+
+ul.uploads {
+  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li.upload {
+  display: inline-block;
+  overflow: hidden;
+  width: 15em;
+  height: 3em;
+  border: 1px solid gray;
+  padding: .5em;
+  margin: 0 .5em .5em 0;
+
+  .progress {
+    font-size: .8em;
+    color: @mutedColor;
+  }
+}
+
+// Makes a progress bar have foreground and background colors
+.simple-progress(@backgroundColor, @barColor) {
+  // Reset progressbar styles. See http://www.useragentman.com/blog/2012/01/03/cross-browser-html5-progress-bars-in-depth/
+  &, &[role] {
+    /* gets rid of default border in Firefox and Opera. */ 
+    border: none;
+  }
+  &[role]:after {
+    background-image: none; /* removes default background from polyfill */
+  }
+  &[role] strong {
+    display: none; /* Ensure fallback text doesn't appear in polyfill */
+  }
+
+  &,                          /* Firefox  */ 
+  &[role][aria-valuenow],     /* Polyfill */
+  &::-webkit-progress-bar {   /* Chrome */
+   background: @backgroundColor !important; /* !important is needed by the polyfill */
+  }
+
+  & { /* IE10 */
+    color: @barColor;
+  }
+  &::-moz-progress-bar {      /* Firefox */
+    border-radius: .2em;
+    background: @barColor;
+  }
+  &::-webkit-progress-value { /* Chrome */
+    border-radius: .2em;
+    background: @barColor;
+  }
+  &[aria-valuenow]:before {  /* Polyfill */
+    border-radius: .2em;
+    background: @barColor;
+  }
+}
+
+/* Now, regular progress style for this page */
+progress {
+  .simple-progress(#f4f4f4, #b4b3b3);
+
+  display: inline-block;
+  width: 30%;
+  max-width: 15em;
+  height: .4em;
+  vertical-align: middle;
+  box-sizing: border-box;
+  border-radius: .2em;
+  overflow: hidden;
+  border: 1px solid #f4f4f4;
+}
