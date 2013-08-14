@@ -5,6 +5,7 @@ define [
   'MassUpload/FileUploader'
   'MassUpload/FileDeleter'
   'MassUpload/State'
+  'MassUpload/UploadProgress'
 ], (
   Backbone
   UploadCollection
@@ -12,6 +13,7 @@ define [
   FileUploader
   FileDeleter
   State
+  UploadProgress
 ) ->
   # a Mass Upload controller.
   #
@@ -105,6 +107,13 @@ define [
       @uploads.on('add change:file', (upload) => @_onUploadAdded(upload))
       @uploads.on('change:deleting', (upload) => @_onUploadDeleted(upload))
       @uploads.on('remove', (upload) => @_onUploadRemoved(upload))
+
+      # Make @get('uploadProgress') a flat object, not a Backbone.Model
+      uploadProgress = new UploadProgress({ collection: @uploads })
+      resetUploadProgress = =>
+        @set(uploadProgress: uploadProgress.pick('loaded', 'total'))
+      uploadProgress.on('change', resetUploadProgress)
+      resetUploadProgress()
 
     fetchFileInfosFromServer: ->
       @lister.run()

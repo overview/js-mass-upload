@@ -16,7 +16,15 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
       @set('id', fileLike.name)
 
     updateWithProgress: ->
-      @updateWithProgressArguments = Array.prototype.slice.call(arguments)
+      @set('updateWithProgressArguments', Array.prototype.slice.call(arguments))
+
+    getProgress: ->
+      if (args = @get('updateWithProgressArguments'))? && args.length
+        args[0]
+      else if (fileInfo = @get('fileInfo'))?
+        { loaded: fileInfo.loaded, total: fileInfo.total }
+      else if (file = @get('file'))?
+        { loaded: 0, total: file.size }
 
   FakeUploads = Backbone.Collection.extend
     model: FakeUpload
@@ -92,9 +100,11 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
         }
         subject = new MassUpload(options)
 
-      describe 'starting empty', ->
-        it 'should have status=waiting', ->
-          expect(subject.get('status')).toEqual('waiting')
+      it 'should have status=waiting to begin with', ->
+        expect(subject.get('status')).toEqual('waiting')
+
+      it 'should have uploadProgress at 0/0', ->
+        expect(subject.get('uploadProgress')).toEqual({ loaded: 0, total: 0 })
 
       it 'should call lister.run', ->
         subject.fetchFileInfosFromServer()
@@ -175,7 +185,11 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
         it 'should set progress on progress', ->
           uploader.callbacks.onProgress(file1, { loaded: 1400, total: 10000 })
-          expect(uploads.at(0).updateWithProgressArguments).toEqual([{ loaded: 1400, total: 10000 }])
+          expect(uploads.at(0).get('updateWithProgressArguments')).toEqual([{ loaded: 1400, total: 10000 }])
+
+        it 'should set uploadProgress on progress', ->
+          uploader.callbacks.onProgress(file1, { loaded: 1400, total: 10000 })
+          expect(subject.get('uploadProgress')).toEqual({ loaded: 3400, total: 60000 })
 
         it 'should set uploading on start', ->
           expect(uploads.at(0).get('uploading')).toBe(true)

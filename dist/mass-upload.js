@@ -501,6 +501,7 @@ define('MassUpload',['backbone', 'MassUpload/UploadCollection', 'MassUpload/File
     },
     _onListerSuccess: function(fileInfos) {
       this.uploads.addFileInfos(fileInfos);
+      console.log(this.uploads);
       return this._tick();
     },
     _onListerError: function(errorDetail) {

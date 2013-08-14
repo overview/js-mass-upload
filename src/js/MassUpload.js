@@ -1,4 +1,4 @@
-define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'MassUpload/FileUploader', 'MassUpload/FileDeleter', 'MassUpload/State'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State) {
+define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'MassUpload/FileUploader', 'MassUpload/FileDeleter', 'MassUpload/State', 'MassUpload/UploadProgress'], function(Backbone, UploadCollection, FileLister, FileUploader, FileDeleter, State, UploadProgress) {
   return Backbone.Model.extend({
     defaults: function() {
       return {
@@ -14,7 +14,7 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
       return Backbone.Model.call(this, {}, options);
     },
     initialize: function(attributes, options) {
-      var _ref, _ref1, _ref2, _ref3,
+      var resetUploadProgress, uploadProgress, _ref, _ref1, _ref2, _ref3,
         _this = this;
       this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
       this.lister = (_ref1 = options != null ? options.lister : void 0) != null ? _ref1 : new FileLister(options.doListFiles);
@@ -74,9 +74,19 @@ define(['backbone', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'Mas
       this.uploads.on('change:deleting', function(upload) {
         return _this._onUploadDeleted(upload);
       });
-      return this.uploads.on('remove', function(upload) {
+      this.uploads.on('remove', function(upload) {
         return _this._onUploadRemoved(upload);
       });
+      uploadProgress = new UploadProgress({
+        collection: this.uploads
+      });
+      resetUploadProgress = function() {
+        return _this.set({
+          uploadProgress: uploadProgress.pick('loaded', 'total')
+        });
+      };
+      uploadProgress.on('change', resetUploadProgress);
+      return resetUploadProgress();
     },
     fetchFileInfosFromServer: function() {
       return this.lister.run();
