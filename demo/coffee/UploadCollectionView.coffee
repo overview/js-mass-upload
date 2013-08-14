@@ -123,8 +123,6 @@ define [ 'backbone', 'underscore', 'humanReadableSize' ], (Backbone, _, humanRea
         progress = upload.getProgress()
         statusAndMessage = uploadToStatusAndMessage(upload)
 
-        console.log(cid, upload.attributes, statusAndMessage.status, els)
-
         els.progress.value = progress.loaded
         els.progress.max = progress.total
         els.text.firstChild.data = progressToText(progress)
@@ -154,7 +152,6 @@ define [ 'backbone', 'underscore', 'humanReadableSize' ], (Backbone, _, humanRea
     _onDrop: (e) ->
       e.preventDefault()
       files = e.originalEvent?.dataTransfer?.files
-      console.log(files)
       if files?.length
         @trigger('add-files', files)
 
