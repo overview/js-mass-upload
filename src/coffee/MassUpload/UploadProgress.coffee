@@ -26,9 +26,10 @@ define [ 'backbone' ], (Backbone) ->
         delete cidToLastKnownProgress[model.cid]
       change = (model) ->
         oldProgress = cidToLastKnownProgress[model.cid]
-        newProgress = model.getProgress()
-        adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total)
-        cidToLastKnownProgress[model.cid] = newProgress
+        if oldProgress? # if !oldProgress? there is a race; it is forthcoming...
+          newProgress = model.getProgress()
+          adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total)
+          cidToLastKnownProgress[model.cid] = newProgress
       reset = =>
         cidToLastKnownProgress = {}
         progress = { loaded: 0, total: 0 }

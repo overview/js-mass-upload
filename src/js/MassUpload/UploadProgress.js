@@ -34,9 +34,11 @@ define(['backbone'], function(Backbone) {
       change = function(model) {
         var newProgress, oldProgress;
         oldProgress = cidToLastKnownProgress[model.cid];
-        newProgress = model.getProgress();
-        adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
-        return cidToLastKnownProgress[model.cid] = newProgress;
+        if (oldProgress != null) {
+          newProgress = model.getProgress();
+          adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
+          return cidToLastKnownProgress[model.cid] = newProgress;
+        }
       };
       reset = function() {
         var progress;
