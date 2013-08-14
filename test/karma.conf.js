@@ -4,7 +4,7 @@ module.exports = function(config) {
     basePath: '..',
     browsers: [ 'PhantomJS' ],
     frameworks: [ 'jasmine', 'requirejs' ],
-    reporters: [ 'progress', 'growl' ],
+    reporters: [ 'dots', 'growl' ],
 
     files: [
       {pattern: 'src/**/*.js', included: false},
