@@ -42,6 +42,8 @@ app.on('change:listFilesProgress', function() { ... });
 app.on('change:uploadProgress', function() { ... });
 
 $('form#mass-upload').prepend(app.el);
+
+app.fetchFileInfosFromServer() // kicks everything off
 ```
 
 Finally, write your UI. It may iterate over `MassUpload.uploads`, a list of files; `onStateChanged` will be called whenever the list changes (because the total size of the upload will change).
