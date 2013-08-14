@@ -1,4 +1,4 @@
-define [ 'jquery', 'mass-upload', 'upload-logic', 'MassUploadView' ], ($, MassUpload, uploadLogic, MassUploadView) ->
+define [ 'jquery', 'mass-upload', 'upload-logic', 'MassUpload/views/MassUpload' ], ($, MassUpload, uploadLogic, MassUploadView) ->
   options = $.extend({
   }, uploadLogic)
 

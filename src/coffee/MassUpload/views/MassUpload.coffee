@@ -1,7 +1,7 @@
 define [
-  './ListFilesProgressView'
-  './UploadCollectionView'
-  './UploadProgressView'
+  './ListFilesProgress'
+  './UploadCollection'
+  './UploadProgress'
 ], (
   ListFilesProgressView,
   UploadCollectionView,
