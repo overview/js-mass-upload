@@ -8,28 +8,36 @@ define ->
     { name: 'file3.txt', loaded: 4000, total: 30000, lastModifiedDate: date3 }
   ]
 
-  tickListFilesAtBytes = (bytes, progress, success, error) ->
-    total = 1000
-    increment = 100
-    timeout = 100
+  networkIsWorking = true # when false, all ticks fail
 
-    if bytes >= total
-      progress({ loaded: total, total: total })
-      success(serverFiles)
+  tickListFilesAtBytes = (bytes, progress, success, error) ->
+    if !networkIsWorking
+      error()
     else
-      progress({ loaded: bytes, total: total })
-      window.setTimeout((-> tickListFilesAtBytes(bytes + increment, progress, success, error)), timeout)
+      total = 1000
+      increment = 100
+      timeout = 100
+
+      if bytes >= total
+        progress({ loaded: total, total: total })
+        success(serverFiles)
+      else
+        progress({ loaded: bytes, total: total })
+        window.setTimeout((-> tickListFilesAtBytes(bytes + increment, progress, success, error)), timeout)
 
   tickUploadFileAtByte = (file, bytes, progress, success, error) ->
-    increment = 50000
-    timeout = 500
-
-    if bytes >= file.size
-      progress({ loaded: file.size, total: file.size })
-      success()
+    if !networkIsWorking
+      error()
     else
-      progress({ loaded: bytes, total: file.size })
-      window.setTimeout((-> tickUploadFileAtByte(file, bytes + increment, progress, success, error)), timeout)
+      increment = 50000
+      timeout = 500
+
+      if bytes >= file.size
+        progress({ loaded: file.size, total: file.size })
+        success()
+      else
+        progress({ loaded: bytes, total: file.size })
+        window.setTimeout((-> tickUploadFileAtByte(file, bytes + increment, progress, success, error)), timeout)
 
   # Returns three dummy files, taking about a second
   doListFiles: (progress, success, error) -> tickListFilesAtBytes(0, progress, success, error)
@@ -38,7 +46,15 @@ define ->
   doUploadFile: (file, progress, success, error) -> tickUploadFileAtByte(file, 0, progress, success, error)
 
   # "Deletes" the file after 1s (really, does nothing but call success)
-  doDeleteFile: (fileInfo, success, error) -> window.setTimeout(success, 1000)
+  doDeleteFile: (fileInfo, success, error) ->
+    window.setTimeout(->
+      if networkIsWorking
+        success()
+      else
+        error()
+    , 1000)
 
   # Specifies to overwrite
   onUploadConflictingFile: (file, conflictingFileInfo, deleteFromServer, skip) -> deleteFromServer()
+
+  toggleWorking: (working) -> networkIsWorking = working

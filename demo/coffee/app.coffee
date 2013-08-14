@@ -6,4 +6,9 @@ define [ 'jquery', 'mass-upload', 'upload-logic', 'MassUpload/views/MassUpload' 
 
   new MassUploadView(model: massUpload, el: $('.mass-upload'))
 
+  $networkIsWorking = $('#network-is-working')
+  $networkIsWorking.change ->
+    value = $networkIsWorking.prop('checked')
+    uploadLogic.toggleWorking(value)
+
   massUpload.fetchFileInfosFromServer()
