@@ -6,7 +6,7 @@ define [ 'backbone', 'underscore', 'humanReadableSize' ], (Backbone, _, humanRea
     if upload.get('deleting')
       status: 'deleting'
       message: 'Deleting…'
-    if !upload.get('file')? && !upload.isFullyUploaded()
+    else if !upload.get('file')? && !upload.isFullyUploaded()
       status: 'must-reselect'
       message: 'Drag the file here again or delete it'
     else if upload.get('error')
