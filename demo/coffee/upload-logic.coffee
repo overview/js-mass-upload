@@ -12,7 +12,7 @@ define ->
 
   tickListFilesAtBytes = (bytes, progress, success, error) ->
     if !networkIsWorking
-      error()
+      error('network is broken')
     else
       total = 1000
       increment = 100
@@ -27,7 +27,7 @@ define ->
 
   tickUploadFileAtByte = (file, bytes, progress, success, error) ->
     if !networkIsWorking
-      error()
+      error('network is broken')
     else
       increment = 50000
       timeout = 500
@@ -51,7 +51,7 @@ define ->
       if networkIsWorking
         success()
       else
-        error()
+        error('network is broken')
     , 1000)
 
   # Specifies to overwrite
