@@ -2,5 +2,7 @@ define [ './AbstractProgress' ], (AbstractProgressView) ->
   # When listing files, shows a progress bar
   AbstractProgressView.extend
     className: 'list-files-progress'
-    massUploadProperty: 'listFilesProgress'
+    progressProperty: 'listFilesProgress'
+    errorProperty: 'listFilesError'
     preamble: 'Checking for files on the server'
+    retryText: 'Retry'

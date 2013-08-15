@@ -135,27 +135,114 @@ progress {
   border: 1px solid @superPaleColor;
 }
 
+.transition-duration(@value) {
+  -webkit-transition-duration: @value;
+  transition-duration: @value;
+}
+
+.transform(@value) {
+  -webkit-transform: @value;
+  transform: @value;
+}
+
+.progress-with-preamble-and-error() {
+  .transition-duration(.5s);
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  max-width: 50em;
+
+  .preamble {
+    float: left;
+    margin-right: 1em;
+  }
+  .error {
+    color: @errorColor;
+    float: right;
+    opacity: 0;
+    margin-left: 1em;
+
+    a {
+      font-size: .8em;
+      line-height: 1.25em;
+      text-decoration: none;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+  .progress {
+    text-align: center;
+    font-size: .7em;
+    color: @mutedColor;
+  }
+
+  progress {
+    max-width: none;
+    width: auto;
+    display: block;
+  }
+}
+
 .mass-upload {
   .list-files-progress {
-    transition: height .5s, opacity .5s;
-    overflow: hidden;
-    height: 0;
-    opacity: 0;
+    .progress-with-preamble-and-error();
   }
   &[data-status="listing-files"] .list-files-progress,
   &[data-status="listing-files-error"] .list-files-progress {
-    height: 2em;
+    height: 1.5em;
+    opacity: 1;
+  }
+  &[data-status="listing-files-error"] .list-files-progress .error {
+    width: auto;
     opacity: 1;
   }
 
   .upload-progress {
-    transition: height .5s, opacity .5s;
-    height: 0;
-    opacity: 0;
+    .progress-with-preamble-and-error();
   }
   &[data-status="uploading"] .upload-progress,
-  &[data-status="uploading-error"] .upload-progress {
+  &[data-status="uploading-error"] .upload-progress,
+  &[data-status="waiting-error"] .upload-progress,
+  &[data-status="waiting"] .upload-progress {
     height: 2em;
     opacity: 1;
+  }
+  &[data-status="uploading-error"] .upload-progress .error {
+    width: auto;
+    opacity: 1;
+  }
+
+  .upload-collection {
+    display: none;
+    margin-bottom: 1em;
+    position: relative;
+    padding-bottom: 8em; // for upload prompt
+
+    .upload-prompt {
+      position: absolute;
+      left: 1em;
+      right: 1em;
+      bottom: 0;
+      height: 8em;
+
+      button, .invisible-file-input {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+      }
+
+      .invisible-file-input {
+        opacity: 0;
+      }
+    }
+  }
+  &[data-status="uploading"] .upload-collection,
+  &[data-status="uploading-error"] .upload-collection,
+  &[data-status="waiting-error"] .upload-collection,
+  &[data-status="waiting"] .upload-collection {
+    display: block;
   }
 }

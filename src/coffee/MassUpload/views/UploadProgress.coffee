@@ -2,5 +2,8 @@ define [ './AbstractProgress' ], (AbstractProgressView) ->
   # When listing files, shows a progress bar
   AbstractProgressView.extend
     className: 'upload-progress'
-    massUploadProperty: 'uploadProgress'
-    preamble: 'Uploading'
+    progressProperty: 'uploadProgress'
+    errorProperty: 'uploadErrors'
+    preamble: 'Synchronization progress'
+
+    getError: -> @model.get('uploadErrors')?[0]?.error || null

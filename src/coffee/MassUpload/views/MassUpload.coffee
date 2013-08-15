@@ -12,6 +12,7 @@ define [
 
     initialize: ->
       listFilesProgressView = new ListFilesProgressView({ model: @model })
+      @listenTo(listFilesProgressView, 'retry', => @model.retryListFiles())
       @$el.append(listFilesProgressView.el)
 
       uploadCollectionView = new UploadCollectionView({ collection: @model.uploads })
@@ -22,6 +23,7 @@ define [
       @listenTo(uploadCollectionView, 'retry-upload', (upload) => @model.retryUpload(upload))
 
       uploadProgressView = new UploadProgressView({ model: @model })
+      @listenTo(uploadProgressView, 'retry', => @model.retryAllUploads())
       @$el.append(uploadProgressView.el)
 
       @listenTo(@model, 'change:status', => @render())

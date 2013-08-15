@@ -52,10 +52,11 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
     events: {
       'click .retry': '_onRetry',
       'click .delete': '_onDelete',
+      'change input': '_onSelectFiles',
       'dragover': '_onDragover',
       'drop': '_onDrop'
     },
-    template: _.template("<ul class=\"uploads\">\n  <%= collection.map(renderUpload).join('') %>\n</ul>"),
+    template: _.template("<ul class=\"uploads\">\n  <%= collection.map(renderUpload).join('') %>\n</ul>\n<div class=\"upload-prompt\">\n  <button>\n    <h3>Select files to upload</h3>\n    <h4>Or drag and drop files here</h4>\n  </button>\n  <input type=\"file\" class=\"invisible-file-input\" multiple=\"multiple\" />\n</div>"),
     uploadTemplate: _.template("<li class=\"<%= status %>\" data-cid=\"<%- upload.cid %>\">\n  <a href=\"#\" class=\"delete\">Delete</a>\n  <a href=\"#\" class=\"retry\">Retry</a>\n  <h3><%- upload.id %></h3>\n  <div class=\"status\">\n    <progress value=\"<%= progress.loaded %>\" max=\"<%= progress.total %>\"></progress>\n    <span class=\"text\"><%= humanReadableSize(progress.loaded) %> / <%= humanReadableSize(progress.total) %></span>\n    <span class=\"size\"><%= humanReadableSize(progress.total) %></span>\n    <span class=\"message\"><%- message %></span>\n  </div>\n</li>"),
     initialize: function() {
       var _this = this;
@@ -175,6 +176,14 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
       e.preventDefault();
       upload = this._eventToUpload(e);
       return this.trigger('remove-upload', upload);
+    },
+    _onSelectFiles: function(e) {
+      var files, input;
+      e.preventDefault();
+      input = e.target;
+      files = input.files;
+      this.trigger('add-files', files);
+      return input.value = '';
     }
   });
 });

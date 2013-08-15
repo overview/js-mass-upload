@@ -1,5 +1,6 @@
 define [
   'backbone'
+  'underscore'
   'MassUpload/UploadCollection'
   'MassUpload/FileLister'
   'MassUpload/FileUploader'
@@ -8,6 +9,7 @@ define [
   'MassUpload/UploadProgress'
 ], (
   Backbone
+  _
   UploadCollection
   FileLister
   FileUploader
@@ -39,7 +41,9 @@ define [
   #
   #     massUpload.uploads # a Backbone.Collection of Upload objects
   #     massUpload.get('status') # listing-files, listing-files-error,
-  #                              # waiting, uploading
+  #                              # uploading, uploading-error
+  #                              # waiting, waiting-error (e.g. conflicts).
+  #                              # uploading-error trumps waiting-error.
   #
   #     massUpload.get('listFilesProgress') # { loaded: 30, total: 100 }
   #
@@ -108,6 +112,7 @@ define [
       @listenTo(@uploads, 'add change:file change:error', (upload) => @_onUploadAdded(upload))
       @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
       @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
+      @listenTo(@uploads, 'reset', => @_onUploadsReset())
 
       # Make @get('uploadProgress') a flat object, not a Backbone.Model
       uploadProgress = new UploadProgress({ collection: @uploads })
@@ -124,6 +129,13 @@ define [
 
     retryUpload: (upload) ->
       upload.set('error', null)
+
+    retryAllUploads: ->
+      # Set error=null from first to last. That way, _forceBestTick() will
+      # only abort at most once, since uploads.next() will return the same
+      # Upload every call.
+      @uploads.each (upload) ->
+        upload.set('error', null)
 
     addFiles: (files) ->
       @uploads.addFiles(files)
@@ -150,16 +162,24 @@ define [
       # nothing: @_tick() on success, stall on error
 
     _onUploadAdded: (upload) ->
-      status = @get('status')
-      if status == 'uploading' || status == 'uploading-error'
-        # Either @uploader or @deleter is working. We want them to stop as
-        # soon as possible so we can adjust to new priorities.
+      error1 = upload.previous('error')
+      error2 = upload.get('error')
 
-        @uploader.abort() # in case it's the uploader
-        # there is no way to abort a delete; that should be fine, as it's quick
-      else
-        # Neither @uploader nor @deleter is working ... and now we want one to
-        @_tick()
+      if error1 != error2
+        # An error has changed; update the uploadErrors attribute
+        newErrors = @get('uploadErrors').slice(0) # shallow copy
+        index = _.sortedIndex(newErrors, { upload: upload }, (x) -> x.upload.id)
+
+        if !error1 # error2 is a new error
+          newErrors.splice(index, 0, { upload: upload, error: error2 })
+        else if !error2 # error1 is a past error
+          newErrors.splice(index, 1)
+        else # error2 is simply a different error
+          newErrors[index].error = error2
+
+        @set('uploadErrors', newErrors)
+
+      @_forceBestTick()
 
     _onUploadRemoved: (upload) ->
       # nothing
@@ -168,8 +188,24 @@ define [
       @_removedUploads.push(upload)
       @_forceBestTick()
 
+    _onUploadsReset: () ->
+      newErrors = []
+      progress = { loaded: 0, total: 0 }
+
+      @uploads.each (upload) ->
+        if (error = upload.get('error'))
+          newErrors.push({ upload: upload, error: error })
+        uploadProgress = upload.getProgress()
+        progress.loaded += uploadProgress.loaded
+        progress.total += uploadProgress.total
+
+      @set
+        uploadErrors: newErrors
+        uploadProgress: progress
+
+      @_tick()
+
     _onUploaderStart: (file) ->
-      @set('status', 'uploading')
       upload = @uploads.get(file.name)
       upload.set
         uploading: true
@@ -189,8 +225,9 @@ define [
       upload.set('error', errorDetail)
 
     _onUploaderSuccess: (file) ->
-      # We already have all the status we need, what with uploading=false
-      # and fileInfo.loaded==fileInfo.total. Ignore this signal.
+      upload = @uploads.get(file.name)
+      upload.updateWithProgress({ loaded: file.size, total: file.size })
+      # onUploaderDone sets uploading=false
 
     _onDeleterStart: (fileInfo) ->
       @set('status', 'uploading')
@@ -216,15 +253,27 @@ define [
           @deleter.run(upload.get('fileInfo'))
         else
           @uploader.run(upload.get('file'))
+
+      status = if @get('uploadErrors').length
+        'uploading-error'
+      else if upload?
+        'uploading'
       else
-        @set('status', 'waiting')
+        progress = @get('uploadProgress')
+        if progress.loaded == progress.total
+          'waiting'
+        else
+          'waiting-error'
+
+      @set('status', status)
 
     # If ticking, aborts and ticks again to work on the highest-priority task
     _forceBestTick: ->
       upload = @uploads.next()
       if upload != @_currentUpload
-        status = @get('status')
-        if status == 'uploading' || status == 'uploading-error'
+        if @_currentUpload
+          # Either @uploader or @deleter is working. We want them to stop as
+          # soon as possible so we can adjust to new priorities.
           @uploader.abort()
         else
           @_tick()

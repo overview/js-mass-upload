@@ -29,7 +29,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
   FakeUploads = Backbone.Collection.extend
     model: FakeUpload
 
-    next: -> @find((model) -> !model.get('error')?)
+    next: -> @find((model) -> model.get('deleting') || (model.get('file')? && !model.get('error')?))
 
   describe 'MassUpload', ->
     options = undefined
@@ -155,7 +155,6 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             { file: null, fileInfo: fileInfo1, error: null }
             { file: null, fileInfo: fileInfo2, error: null }
           ]) 
-          subject.set('status', 'waiting')
 
         describe 'when adding files', ->
           beforeEach -> subject.addFiles([file1])
@@ -177,26 +176,26 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
       describe 'when uploading', ->
         beforeEach ->
           subject.uploads.reset([
-            { file: file1, fileInfo: fileInfo1, error: null }
-            { file: null, fileInfo: fileInfo2, error: null }
+            { file: null, fileInfo: fileInfo1, error: null }
+            { file: file2, fileInfo: fileInfo2, error: null }
             { file: file3, fileInfo: null, error: 'previous error' }
           ]) 
           uploader.callbacks.onStart(file1)
 
         it 'should set progress on progress', ->
-          uploader.callbacks.onProgress(file1, { loaded: 1400, total: 10000 })
-          expect(uploads.at(0).get('updateWithProgressArguments')).toEqual([{ loaded: 1400, total: 10000 }])
+          uploader.callbacks.onProgress(file2, { loaded: 2400, total: 20000 })
+          expect(uploads.at(1).get('updateWithProgressArguments')).toEqual([{ loaded: 2400, total: 20000 }])
 
         it 'should set uploadProgress on progress', ->
-          uploader.callbacks.onProgress(file1, { loaded: 1400, total: 10000 })
+          uploader.callbacks.onProgress(file2, { loaded: 2400, total: 20000 })
           expect(subject.get('uploadProgress')).toEqual({ loaded: 3400, total: 60000 })
 
         it 'should set uploading on start', ->
           expect(uploads.at(0).get('uploading')).toBe(true)
 
         it 'should unset error on start', ->
-          uploader.callbacks.onStart(file2)
-          expect(uploads.at(1).get('error')).toBe(null)
+          uploader.callbacks.onStart(file3)
+          expect(uploads.at(2).get('error')).toBe(null)
 
         it 'should unset uploading on stop', ->
           uploader.callbacks.onStop(file1)
@@ -211,14 +210,15 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
         describe 'when adding a file', ->
           beforeEach ->
-            subject.uploads.at(1).set('file', file2)
+            subject.uploads.at(0).set('file', file1)
 
           it 'should abort uploading', ->
             expect(uploader.abort).toHaveBeenCalled()
 
           it 'should start uploading again when abort is complete', ->
-            uploader.callbacks.onStop(file1)
+            uploader.callbacks.onStop(file2)
             expect(uploader.run).toHaveBeenCalled()
+            expect(uploader.run.mostRecentCall.args[0]).toBe(file1)
 
         describe 'when deleting a file', ->
           uploadToDelete = undefined
@@ -233,7 +233,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
           describe 'when abort is complete', ->
             beforeEach ->
               deleter.run.andCallFake(-> deleter.callbacks.onStart(fileInfo1))
-              uploader.callbacks.onStop(file1)
+              uploader.callbacks.onStop(file2)
 
             it 'should call deleter.run()', ->
               expect(deleter.run).toHaveBeenCalledWith(uploadToDelete.get('fileInfo'))
@@ -248,6 +248,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
               it 'should continue with uploading', ->
                 expect(uploader.run).toHaveBeenCalled()
+                expect(uploader.run.mostRecentCall.args[0]).toBe(file2)
 
             describe 'when delete fails', ->
               beforeEach ->
@@ -283,6 +284,27 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             { file: file1, fileInfo: fileInfo1, error: 'an error' }
           ])
 
-        it 'should allow retrying', ->
+        it 'should have status uploading-error, even when waiting', ->
+          expect(subject.get('status')).toEqual('uploading-error')
+
+        it 'should allow retryUpload', ->
           subject.retryUpload(uploads.at(0))
           expect(uploader.run).toHaveBeenCalled()
+
+        it 'should allow retryAllUploads', ->
+          subject.retryAllUploads()
+          expect(uploader.run).toHaveBeenCalled()
+
+        it 'should have uploadErrors', ->
+          expect(subject.get('uploadErrors')).toEqual([
+            { upload: uploads.at(0), error: 'an error' }
+          ])
+
+      describe 'with a missing file', ->
+        beforeEach ->
+          uploads.reset([
+            { file: null, fileInfo: fileInfo1, error: null }
+          ])
+
+        it 'should have status=waiting-error', ->
+          expect(subject.get('status')).toEqual('waiting-error')

@@ -10,9 +10,12 @@ define ->
 
   networkIsWorking = true # when false, all ticks fail
 
+  sendAsyncError = (error, message) ->
+    window.setTimeout((-> error(message)), 50)
+
   tickListFilesAtBytes = (bytes, progress, success, error) ->
     if !networkIsWorking
-      error('network is broken')
+      sendAsyncError(error, 'network is broken')
     else
       total = 1000
       increment = 100
@@ -27,7 +30,7 @@ define ->
 
   tickUploadFileAtByte = (file, bytes, progress, success, error) ->
     if !networkIsWorking
-      error('network is broken')
+      sendAsyncError(error, 'network is broken')
     else
       increment = 50000
       timeout = 500

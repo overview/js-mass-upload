@@ -47,6 +47,7 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
     events:
       'click .retry': '_onRetry'
       'click .delete': '_onDelete'
+      'change input': '_onSelectFiles'
       'dragover': '_onDragover'
       'drop': '_onDrop'
 
@@ -54,6 +55,13 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
       <ul class="uploads">
         <%= collection.map(renderUpload).join('') %>
       </ul>
+      <div class="upload-prompt">
+        <button>
+          <h3>Select files to upload</h3>
+          <h4>Or drag and drop files here</h4>
+        </button>
+        <input type="file" class="invisible-file-input" multiple="multiple" />
+      </div>
     """)
 
     uploadTemplate: _.template("""
@@ -169,3 +177,10 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
       e.preventDefault()
       upload = @_eventToUpload(e)
       @trigger('remove-upload', upload)
+
+    _onSelectFiles: (e) ->
+      e.preventDefault()
+      input = e.target
+      files = input.files
+      @trigger('add-files', files)
+      input.value = '' # unset input.files

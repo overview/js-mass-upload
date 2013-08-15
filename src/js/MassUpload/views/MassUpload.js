@@ -7,6 +7,9 @@ define(['./ListFilesProgress', './UploadCollection', './UploadProgress'], functi
       listFilesProgressView = new ListFilesProgressView({
         model: this.model
       });
+      this.listenTo(listFilesProgressView, 'retry', function() {
+        return _this.model.retryListFiles();
+      });
       this.$el.append(listFilesProgressView.el);
       uploadCollectionView = new UploadCollectionView({
         collection: this.model.uploads
@@ -23,6 +26,9 @@ define(['./ListFilesProgress', './UploadCollection', './UploadProgress'], functi
       });
       uploadProgressView = new UploadProgressView({
         model: this.model
+      });
+      this.listenTo(uploadProgressView, 'retry', function() {
+        return _this.model.retryAllUploads();
       });
       this.$el.append(uploadProgressView.el);
       this.listenTo(this.model, 'change:status', function() {

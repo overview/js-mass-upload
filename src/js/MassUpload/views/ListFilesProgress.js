@@ -1,7 +1,9 @@
 define(['./AbstractProgress'], function(AbstractProgressView) {
   return AbstractProgressView.extend({
     className: 'list-files-progress',
-    massUploadProperty: 'listFilesProgress',
-    preamble: 'Checking for files on the server'
+    progressProperty: 'listFilesProgress',
+    errorProperty: 'listFilesError',
+    preamble: 'Checking for files on the server',
+    retryText: 'Retry'
   });
 });
