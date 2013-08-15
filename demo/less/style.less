@@ -3,6 +3,11 @@
 @mutedColor: gray;
 @errorColor: #c73333;
 
+body {
+  max-width: 940px;
+  margin: 0 auto;
+}
+
 .upload-error() {
   &, .message {
     color: @errorColor;
@@ -22,12 +27,15 @@ ul.uploads {
   column-width: 15em;
   -moz-column-width: 15em;
   -webkit-column-width: 15em;
+  column-gap: .5em;
+  -moz-column-gap: .5em;
+  -webkit-column-gap: .5em;
 
   &>li {
     display: inline-block;
     overflow: hidden;
     box-sizing: border-box;
-    width: 15em;
+    width: 100%;
     height: 5em;
     border: 1px solid @superPaleColor;
     padding: .5em;
