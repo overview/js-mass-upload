@@ -1,7 +1,6 @@
 define(['backbone', './Upload'], function(Backbone, Upload) {
   return Backbone.Collection.extend({
     model: Upload,
-    comparator: 'id',
     addFiles: function(files) {
       var file, uploads;
       uploads = (function() {

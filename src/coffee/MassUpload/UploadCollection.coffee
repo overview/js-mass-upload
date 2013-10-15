@@ -16,7 +16,6 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
   #     # Of course, uploading is async, so this can't be a `while` loop.
   Backbone.Collection.extend
     model: Upload
-    comparator: 'id'
 
     # Adds some user-selected files to the collection.
     #
