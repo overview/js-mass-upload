@@ -37,6 +37,9 @@ define [
   #     # selected (barring race conditions). The form may be submitted as
   #     # long as there are no errors in the uploads collection.
   #
+  #     massUpload.abort()
+  #     # Abort the current upload entirely. Wire this to your cancel button.
+  #
   # From the view's perspective, rendering is straightforward:
   #
   #     massUpload.uploads # a Backbone.Collection of Upload objects

@@ -503,8 +503,13 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
       return Backbone.Model.call(this, {}, options);
     },
     initialize: function(attributes, options) {
-      var resetUploadProgress, uploadProgress, _ref, _ref1, _ref2, _ref3,
+      this._options = options;
+      return this.prepare();
+    },
+    prepare: function() {
+      var options, resetUploadProgress, uploadProgress, _ref, _ref1, _ref2, _ref3,
         _this = this;
+      options = this._options;
       this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
       this.lister = (_ref1 = options != null ? options.lister : void 0) != null ? _ref1 : new FileLister(options.doListFiles);
       this.lister.callbacks = {
@@ -599,6 +604,14 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
     },
     removeUpload: function(upload) {
       return upload.set('deleting', true);
+    },
+    abort: function() {
+      var _this = this;
+      this.uploads.each(function(upload) {
+        return _this.removeUpload(upload);
+      });
+      this.uploads.reset();
+      return this.prepare();
     },
     _onListerStart: function() {
       this.set('status', 'listing-files');
