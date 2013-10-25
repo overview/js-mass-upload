@@ -85,6 +85,11 @@ define [
       Backbone.Model.call(this, {}, options)
 
     initialize: (attributes, options) ->
+      @_options = options
+      @prepare()
+
+    prepare: ->
+      options = @_options
       @uploads = options?.uploads ? new UploadCollection()
       @lister = options?.lister ? new FileLister(options.doListFiles)
       @lister.callbacks =
@@ -142,6 +147,12 @@ define [
 
     removeUpload: (upload) ->
       upload.set('deleting', true)
+
+    abort: ->
+      @uploads.each (upload) =>
+        @removeUpload(upload)
+      @uploads.reset()
+      @prepare()
 
     _onListerStart: ->
       @set('status', 'listing-files')

@@ -123,9 +123,9 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
         ])
         expect(uploads.next()).toBe(uploads.get('file2.txt'))
 
-      it 'should return an alphabetically-first unstarted file', ->
+      it 'should return files in collection order', ->
         uploads = new UploadCollection([
           { file: file2, fileInfo: null, error: null }
           { file: file1, fileInfo: null, error: null }
         ])
-        expect(uploads.next()).toBe(uploads.get('file1.txt'))
+        expect(uploads.next()).toBe(uploads.get('file2.txt'))

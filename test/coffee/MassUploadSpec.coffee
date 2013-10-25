@@ -154,7 +154,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
           subject.uploads.reset([
             { file: null, fileInfo: fileInfo1, error: null }
             { file: null, fileInfo: fileInfo2, error: null }
-          ]) 
+          ])
 
         describe 'when adding files', ->
           beforeEach -> subject.addFiles([file1])
@@ -179,7 +179,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             { file: null, fileInfo: fileInfo1, error: null }
             { file: file2, fileInfo: fileInfo2, error: null }
             { file: file3, fileInfo: null, error: 'previous error' }
-          ]) 
+          ])
           uploader.callbacks.onStart(file1)
 
         it 'should set progress on progress', ->
@@ -219,6 +219,23 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             uploader.callbacks.onStop(file2)
             expect(uploader.run).toHaveBeenCalled()
             expect(uploader.run.mostRecentCall.args[0]).toBe(file1)
+
+        describe 'on abort', ->
+          beforeEach ->
+            spyOn(subject, 'prepare');
+            subject.abort()
+
+          it 'should have status=waiting', ->
+            expect(subject.get('status')).toEqual('waiting')
+
+          it 'should have uploadProgress at 0/0', ->
+            expect(subject.get('uploadProgress')).toEqual({ loaded: 0, total: 0 })
+
+          it 'has no uploads', ->
+            expect(subject.uploads.at(0)).not.toBeDefined()
+
+          it 'resets the uploader, lister, etc', ->
+            expect(subject.prepare).toHaveBeenCalled()
 
         describe 'when deleting a file', ->
           uploadToDelete = undefined
