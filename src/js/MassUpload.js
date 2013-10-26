@@ -14,15 +14,29 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
       return Backbone.Model.call(this, {}, options);
     },
     initialize: function(attributes, options) {
+      var _ref,
+        _this = this;
       this._options = options;
+      this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
+      this.listenTo(this.uploads, 'add change:file change:error', function(upload) {
+        return _this._onUploadAdded(upload);
+      });
+      this.listenTo(this.uploads, 'change:deleting', function(upload) {
+        return _this._onUploadDeleted(upload);
+      });
+      this.listenTo(this.uploads, 'remove', function(upload) {
+        return _this._onUploadRemoved(upload);
+      });
+      this.listenTo(this.uploads, 'reset', function() {
+        return _this._onUploadsReset();
+      });
       return this.prepare();
     },
     prepare: function() {
-      var options, resetUploadProgress, uploadProgress, _ref, _ref1, _ref2, _ref3,
+      var options, resetUploadProgress, uploadProgress, _ref, _ref1, _ref2,
         _this = this;
       options = this._options;
-      this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
-      this.lister = (_ref1 = options != null ? options.lister : void 0) != null ? _ref1 : new FileLister(options.doListFiles);
+      this.lister = (_ref = options != null ? options.lister : void 0) != null ? _ref : new FileLister(options.doListFiles);
       this.lister.callbacks = {
         onStart: function() {
           return _this._onListerStart();
@@ -40,7 +54,7 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
           return _this._onListerStop();
         }
       };
-      this.uploader = (_ref2 = options != null ? options.uploader : void 0) != null ? _ref2 : new FileUploader(options.doUploadFile);
+      this.uploader = (_ref1 = options != null ? options.uploader : void 0) != null ? _ref1 : new FileUploader(options.doUploadFile);
       this.uploader.callbacks = {
         onStart: function(file) {
           return _this._onUploaderStart(file);
@@ -58,7 +72,7 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
           return _this._onUploaderProgress(file, progressEvent);
         }
       };
-      this.deleter = (_ref3 = options != null ? options.deleter : void 0) != null ? _ref3 : new FileDeleter(options.doDeleteFile);
+      this.deleter = (_ref2 = options != null ? options.deleter : void 0) != null ? _ref2 : new FileDeleter(options.doDeleteFile);
       this.deleter.callbacks = {
         onStart: function(fileInfo) {
           return _this._onDeleterStart(fileInfo);
@@ -73,18 +87,6 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
           return _this._onDeleterStop(fileInfo);
         }
       };
-      this.listenTo(this.uploads, 'add change:file change:error', function(upload) {
-        return _this._onUploadAdded(upload);
-      });
-      this.listenTo(this.uploads, 'change:deleting', function(upload) {
-        return _this._onUploadDeleted(upload);
-      });
-      this.listenTo(this.uploads, 'remove', function(upload) {
-        return _this._onUploadRemoved(upload);
-      });
-      this.listenTo(this.uploads, 'reset', function() {
-        return _this._onUploadsReset();
-      });
       uploadProgress = new UploadProgress({
         collection: this.uploads
       });

@@ -89,11 +89,17 @@ define [
 
     initialize: (attributes, options) ->
       @_options = options
+      @uploads = options?.uploads ? new UploadCollection()
+
+      @listenTo(@uploads, 'add change:file change:error', (upload) => @_onUploadAdded(upload))
+      @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
+      @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
+      @listenTo(@uploads, 'reset', => @_onUploadsReset())
+
       @prepare()
 
     prepare: ->
       options = @_options
-      @uploads = options?.uploads ? new UploadCollection()
       @lister = options?.lister ? new FileLister(options.doListFiles)
       @lister.callbacks =
         onStart: => @_onListerStart()
@@ -116,11 +122,6 @@ define [
         onSuccess: (fileInfo) => @_onDeleterSuccess(fileInfo)
         onError: (fileInfo, errorDetail) => @_onDeleterError(fileInfo, errorDetail)
         onStop: (fileInfo) => @_onDeleterStop(fileInfo)
-
-      @listenTo(@uploads, 'add change:file change:error', (upload) => @_onUploadAdded(upload))
-      @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
-      @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
-      @listenTo(@uploads, 'reset', => @_onUploadsReset())
 
       # Make @get('uploadProgress') a flat object, not a Backbone.Model
       uploadProgress = new UploadProgress({ collection: @uploads })
