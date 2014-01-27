@@ -1,4 +1,6 @@
 define [ 'backbone' ], (Backbone) ->
+  # Listens to an UploadCollection and updates its `loaded` and `total`
+  # attributes.
   Backbone.Model.extend
     defaults:
       loaded: 0
@@ -7,6 +9,11 @@ define [ 'backbone' ], (Backbone) ->
     initialize: ->
       collection = @get('collection')
       throw 'Must initialize UploadProgress with `collection`, an UploadCollection' if !collection?
+
+      @_updateAndStartListening()
+
+    _updateAndStartListening: ->
+      collection = @get('collection')
 
       adjust = (dLoaded, dTotal) =>
         @set
@@ -52,3 +59,15 @@ define [ 'backbone' ], (Backbone) ->
       reset()
 
       undefined
+
+    # Stops listening for the duration of the callback.
+    #
+    # Call this when you know you'll be making large changes to the collection.
+    # It will remove Backbone event handlers, so it will never be called.
+    inBatch: (callback) ->
+      @stopListening(@get('collection'))
+      try
+        callback()
+      finally
+        @_updateAndStartListening()
+

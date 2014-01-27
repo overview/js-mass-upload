@@ -62,6 +62,21 @@ define [ 'MassUpload/UploadProgress', 'backbone' ], (UploadProgress, Backbone) -
         collection.remove(collection.at(1))
         expect(subject.get('total')).toEqual(100)
 
+      it 'should stop listening to changes in inBatch', ->
+        subject.inBatch ->
+          collection.at(1).set({ loaded: 25 })
+          expect(subject.get('loaded')).toEqual(70)
+
+      it 'should catch up after changes in inBatch', ->
+        subject.inBatch ->
+          collection.at(1).set({ loaded: 25 })
+        expect(subject.get('loaded')).toEqual(75)
+
+      it 'should listen after inBatch()', ->
+        subject.inBatch(->)
+        collection.at(1).set({ loaded: 25 })
+        expect(subject.get('loaded')).toEqual(75)
+
       it 'should change loaded when an upload changes', ->
         collection.at(1).set({ loaded: 25 })
         expect(subject.get('loaded')).toEqual(75)

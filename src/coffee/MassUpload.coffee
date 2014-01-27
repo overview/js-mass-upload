@@ -124,10 +124,10 @@ define [
         onStop: (fileInfo) => @_onDeleterStop(fileInfo)
 
       # Make @get('uploadProgress') a flat object, not a Backbone.Model
-      uploadProgress = new UploadProgress({ collection: @uploads })
+      @_uploadProgress = new UploadProgress({ collection: @uploads })
       resetUploadProgress = =>
-        @set(uploadProgress: uploadProgress.pick('loaded', 'total'))
-      @listenTo(uploadProgress, 'change', resetUploadProgress)
+        @set(uploadProgress: @_uploadProgress.pick('loaded', 'total'))
+      @listenTo(@_uploadProgress, 'change', resetUploadProgress)
       resetUploadProgress()
 
     fetchFileInfosFromServer: ->
@@ -147,7 +147,8 @@ define [
         upload.set('error', null)
 
     addFiles: (files) ->
-      @uploads.addFiles(files)
+      @_uploadProgress.inBatch =>
+        @uploads.addFiles(files)
 
     removeUpload: (upload) ->
       upload.set('deleting', true)

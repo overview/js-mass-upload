@@ -33,7 +33,7 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
       return this.prepare();
     },
     prepare: function() {
-      var options, resetUploadProgress, uploadProgress, _ref, _ref1, _ref2,
+      var options, resetUploadProgress, _ref, _ref1, _ref2,
         _this = this;
       options = this._options;
       this.lister = (_ref = options != null ? options.lister : void 0) != null ? _ref : new FileLister(options.doListFiles);
@@ -87,15 +87,15 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
           return _this._onDeleterStop(fileInfo);
         }
       };
-      uploadProgress = new UploadProgress({
+      this._uploadProgress = new UploadProgress({
         collection: this.uploads
       });
       resetUploadProgress = function() {
         return _this.set({
-          uploadProgress: uploadProgress.pick('loaded', 'total')
+          uploadProgress: _this._uploadProgress.pick('loaded', 'total')
         });
       };
-      this.listenTo(uploadProgress, 'change', resetUploadProgress);
+      this.listenTo(this._uploadProgress, 'change', resetUploadProgress);
       return resetUploadProgress();
     },
     fetchFileInfosFromServer: function() {
@@ -113,7 +113,10 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
       });
     },
     addFiles: function(files) {
-      return this.uploads.addFiles(files);
+      var _this = this;
+      return this._uploadProgress.inBatch(function() {
+        return _this.uploads.addFiles(files);
+      });
     },
     removeUpload: function(upload) {
       return upload.set('deleting', true);
