@@ -11,6 +11,7 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
 
     subject = undefined
     beforeEach -> subject = new UploadCollection([])
+    afterEach -> subject?.off()
 
     describe 'addFiles() when file does not exist', ->
       beforeEach -> subject.addFiles([ file1, file2 ])
@@ -76,56 +77,63 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
 
     describe 'next', ->
       it 'should return null on empty collection', ->
-        uploads = new UploadCollection([])
-        expect(uploads.next()).toBe(null)
+        expect(subject.next()).toBe(null)
 
       it 'should return null if all files are uploaded', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: file1, fileInfo: _.defaults({ loaded: file1.size }, fileInfo1), error: null }
         ])
-        expect(uploads.next()).toBe(null)
+        expect(subject.next()).toBe(null)
 
       it 'should return null if an unfinished file was not selected by the user', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: null, fileInfo: fileInfo1, error: null }
         ])
-        expect(uploads.next()).toBe(null)
+        expect(subject.next()).toBe(null)
 
       it 'should return null if all files have errors', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: file1, fileInfo: fileInfo1, error: 'error' }
         ])
-        expect(uploads.next()).toBe(null)
+        expect(subject.next()).toBe(null)
 
       it 'should return an un-uploaded file', ->
         upload = { file: file1, fileInfo: fileInfo1, error: null }
-        uploads = new UploadCollection([ upload ])
-        expect(uploads.next()).toBe(uploads.get('file1.txt'))
+        subject.reset([ upload ])
+        expect(subject.next()).toBe(subject.get('file1.txt'))
 
       it 'should return a deleting file ahead of an uploading file', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: file1, fileInfo: fileInfo1, uploading: true, error: null }
           { file: file2, fileInfo: fileInfo2, deleting: true, error: null }
         ])
-        expect(uploads.next()).toBe(uploads.get('file2.txt'))
+        expect(subject.next()).toBe(subject.get('file2.txt'))
 
       it 'should return an uploading file ahead of an unfinished file', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: file1, fileInfo: fileInfo1, error: null }
           { file: file2, fileInfo: fileInfo2, uploading: true, error: null }
         ])
-        expect(uploads.next()).toBe(uploads.get('file2.txt'))
+        expect(subject.next()).toBe(subject.get('file2.txt'))
 
       it 'should return an unfinished file ahead of an unstarted file', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: file1, fileInfo: null, error: null }
           { file: file2, fileInfo: fileInfo2, error: null }
         ])
-        expect(uploads.next()).toBe(uploads.get('file2.txt'))
+        expect(subject.next()).toBe(subject.get('file2.txt'))
 
       it 'should return files in collection order', ->
-        uploads = new UploadCollection([
+        subject.reset([
           { file: file2, fileInfo: null, error: null }
           { file: file1, fileInfo: null, error: null }
         ])
-        expect(uploads.next()).toBe(uploads.get('file2.txt'))
+        expect(subject.next()).toBe(subject.get('file2.txt'))
+
+      it 'should return a second file after the first is uploaded', ->
+        subject.reset([
+          { file: file1, fileInfo: null, error: null }
+          { file: file2, fileInfo: null, error: null }
+        ])
+        subject.get('file1.txt').set(fileInfo: _.extend({}, fileInfo1, { loaded: 10000 }))
+        expect(subject.next()).toBe(subject.get('file2.txt'))

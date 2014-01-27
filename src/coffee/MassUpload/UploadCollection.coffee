@@ -1,4 +1,60 @@
 define [ 'backbone', './Upload' ], (Backbone, Upload) ->
+  # Helper for use with UploadCollection.next()
+  class UploadPriorityQueue
+    constructor: ->
+      @deleting = []
+      @uploading = []
+      @unfinished = []
+      @unstarted = []
+
+    uploadAttributesToState: (uploadAttributes) ->
+      ret = if uploadAttributes.error?
+        null # can't do anything
+      else if uploadAttributes.deleting
+        'deleting'
+      else if uploadAttributes.uploading
+        'uploading'
+      else if uploadAttributes.file? && uploadAttributes.fileInfo? && uploadAttributes.fileInfo.loaded < uploadAttributes.fileInfo.total
+        'unfinished'
+      else if uploadAttributes.file? && !uploadAttributes.fileInfo?
+        'unstarted'
+      else
+        null
+
+      ret
+
+    add: (upload) ->
+      state = @uploadAttributesToState(upload.attributes)
+      if state?
+        @[state].push(upload)
+
+    # Removes upload from the array, if it's there; otherwise does nothing
+    _removeUploadFromArray: (upload, array) ->
+      idx = array.indexOf(upload)
+      if idx >= 0
+        array.splice(idx, 1)
+
+    remove: (upload) ->
+      state = @uploadAttributesToState(upload.attributes)
+      if state?
+        @_removeUploadFromArray(upload.attributes, @[state])
+
+    change: (upload) ->
+      prevState = @uploadAttributesToState(upload.previousAttributes())
+      newState = @uploadAttributesToState(upload.attributes)
+      if prevState != newState
+        if prevState?
+          @_removeUploadFromArray(upload, @[prevState])
+        if newState?
+          @[newState].push(upload)
+
+    reset: (collection) ->
+      collection.each(@add, @)
+
+    # Returns the most important pending Upload, or `null`.
+    next: ->
+      @deleting[0] ? @uploading[0] ? @unfinished[0] ? @unstarted[0] ? null
+
   # A collection of Upload objects.
   #
   # Here's how to modify this collection:
@@ -14,8 +70,14 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
   #     while ((upload = uploadCollection.next()) != null)
   #       uploader.run(upload)
   #     # Of course, uploading is async, so this can't be a `while` loop.
-  Backbone.Collection.extend
+  class UploadCollection extends Backbone.Collection
     model: Upload
+
+    initialize: ->
+      @_priorityQueue = new UploadPriorityQueue()
+      for event in [ 'change', 'add', 'remove', 'reset' ]
+        @on(event, @_priorityQueue[event], @_priorityQueue)
+      @_priorityQueue.reset(@)
 
     # Adds some user-selected files to the collection.
     #
@@ -60,26 +122,7 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
     #       else
     #         doWhateverWeDoWhenThereIsNothingToSync()
     next: ->
-      firstDeleting = null
-      firstUploading = null
-      firstUnfinished = null
-      firstUnstarted = null
-
-      @each (upload) ->
-        file = upload.get('file')
-        fileInfo = upload.get('fileInfo')
-
-        if !upload.get('error')?
-          if upload.get('deleting')
-            firstDeleting ||= upload
-          if upload.get('uploading')
-            firstUploading ||= upload
-          if file && fileInfo && fileInfo.loaded < fileInfo.total
-            firstUnfinished ||= upload
-          if file && !fileInfo
-            firstUnstarted ||= upload
-
-      firstDeleting || firstUploading || firstUnfinished || firstUnstarted
+      @_priorityQueue.next()
 
     # Like add([...], merge: true), but it never subtracts attributes.
     #
