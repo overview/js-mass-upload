@@ -1233,8 +1233,8 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
       var upload;
       upload = this.uploads.get(file.name);
       return upload.updateWithProgress({
-        loaded: file.size,
-        total: file.size
+        loaded: upload.fstatSync().size,
+        total: upload.fstatSync().size
       });
     },
     _onDeleterStart: function(fileInfo) {

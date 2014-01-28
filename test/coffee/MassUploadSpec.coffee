@@ -26,6 +26,8 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
       else if (file = @get('file'))?
         { loaded: 0, total: file.size }
 
+    fstatSync: -> @get('file')
+
   FakeUploads = Backbone.Collection.extend
     model: FakeUpload
 
@@ -180,7 +182,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
             { file: file2, fileInfo: fileInfo2, error: null }
             { file: file3, fileInfo: null, error: 'previous error' }
           ])
-          uploader.callbacks.onStart(file1)
+          uploader.callbacks.onStart(file2)
 
         it 'should set progress on progress', ->
           uploader.callbacks.onProgress(file2, { loaded: 2400, total: 20000 })
@@ -191,22 +193,23 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
           expect(subject.get('uploadProgress')).toEqual({ loaded: 3400, total: 60000 })
 
         it 'should set uploading on start', ->
-          expect(uploads.at(0).get('uploading')).toBe(true)
+          expect(uploads.at(1).get('uploading')).toBe(true)
 
         it 'should unset error on start', ->
           uploader.callbacks.onStart(file3)
           expect(uploads.at(2).get('error')).toBe(null)
 
         it 'should unset uploading on stop', ->
-          uploader.callbacks.onStop(file1)
-          expect(uploads.at(0).get('uploading')).toBe(false)
+          uploader.callbacks.onStop(file2)
+          expect(uploads.at(1).get('uploading')).toBe(false)
 
         it 'should set upload error on error', ->
-          uploader.callbacks.onError(file1, 'error')
-          expect(uploads.at(0).get('error')).toEqual('error')
+          uploader.callbacks.onError(file2, 'error')
+          expect(uploads.at(1).get('error')).toEqual('error')
 
-        it 'should not crash on success', ->
-          expect(-> uploader.callbacks.onSuccess(file1)).not.toThrow()
+        it 'should set uploadProgress on success', ->
+          uploader.callbacks.onSuccess(file2)
+          expect(uploads.at(1).get('updateWithProgressArguments')).toEqual([ { loaded: 20000, total: 20000 } ])
 
         describe 'when adding a file', ->
           beforeEach ->

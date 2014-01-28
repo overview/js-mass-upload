@@ -242,7 +242,7 @@ define [
 
     _onUploaderSuccess: (file) ->
       upload = @uploads.get(file.name)
-      upload.updateWithProgress({ loaded: file.size, total: file.size })
+      upload.updateWithProgress({ loaded: upload.fstatSync().size, total: upload.fstatSync().size })
       # onUploaderDone sets uploading=false
 
     _onDeleterStart: (fileInfo) ->
