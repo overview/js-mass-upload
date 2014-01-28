@@ -91,7 +91,8 @@ define [
       @_options = options
       @uploads = options?.uploads ? new UploadCollection()
 
-      @listenTo(@uploads, 'add change:file change:error', (upload) => @_onUploadAdded(upload))
+      @listenTo(@uploads, 'add-batch', @_onUploadBatchAdded)
+      @listenTo(@uploads, 'change:file change:error', (upload) => @_onUploadChanged(upload))
       @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
       @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
       @listenTo(@uploads, 'reset', => @_onUploadsReset())
@@ -177,23 +178,34 @@ define [
     _onListerStop: ->
       # nothing: @_tick() on success, stall on error
 
-    _onUploadAdded: (upload) ->
+    _mergeUploadError: (upload, prevError, curError) ->
+      # Update the uploadErrors attribute
+
+      newErrors = @get('uploadErrors').slice(0) # shallow copy
+      index = _.sortedIndex(newErrors, { upload: upload }, (x) -> x.upload.id)
+
+      if !prevError? # new error: insert curError
+        newErrors.splice(index, 0, { upload: upload, error: curError })
+      else if !curError? # old error: remove prevError
+        newErrors.splice(index, 1)
+      else # replace prevError with curError
+        newErrors[index].error = curError
+
+      @set('uploadErrors', newErrors)
+
+    _onUploadBatchAdded: (uploads) ->
+      for upload in uploads
+        error = upload.get('error')
+        if error?
+          @_mergeUploadError(upload, null, error)
+
+      @_forceBestTick()
+
+    _onUploadChanged: (upload) ->
       error1 = upload.previous('error')
       error2 = upload.get('error')
-
       if error1 != error2
-        # An error has changed; update the uploadErrors attribute
-        newErrors = @get('uploadErrors').slice(0) # shallow copy
-        index = _.sortedIndex(newErrors, { upload: upload }, (x) -> x.upload.id)
-
-        if !error1 # error2 is a new error
-          newErrors.splice(index, 0, { upload: upload, error: error2 })
-        else if !error2 # error1 is a past error
-          newErrors.splice(index, 1)
-        else # error2 is simply a different error
-          newErrors[index].error = error2
-
-        @set('uploadErrors', newErrors)
+        @_mergeUploadError(upload, error1, error2)
 
       @_forceBestTick()
 

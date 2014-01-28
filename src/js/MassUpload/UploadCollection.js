@@ -146,7 +146,10 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
           toAdd.push(upload);
         }
       }
-      return this.add(toAdd);
+      if (toAdd.length) {
+        this.add(toAdd);
+        return this.trigger('add-batch', toAdd);
+      }
     };
 
     return UploadCollection;

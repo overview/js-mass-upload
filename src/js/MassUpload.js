@@ -18,8 +18,9 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
         _this = this;
       this._options = options;
       this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
-      this.listenTo(this.uploads, 'add change:file change:error', function(upload) {
-        return _this._onUploadAdded(upload);
+      this.listenTo(this.uploads, 'add-batch', this._onUploadBatchAdded);
+      this.listenTo(this.uploads, 'change:file change:error', function(upload) {
+        return _this._onUploadChanged(upload);
       });
       this.listenTo(this.uploads, 'change:deleting', function(upload) {
         return _this._onUploadDeleted(upload);
@@ -145,28 +146,43 @@ define(['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/Fil
       return this.set('status', 'listing-files-error');
     },
     _onListerStop: function() {},
-    _onUploadAdded: function(upload) {
-      var error1, error2, index, newErrors;
+    _mergeUploadError: function(upload, prevError, curError) {
+      var index, newErrors;
+      newErrors = this.get('uploadErrors').slice(0);
+      index = _.sortedIndex(newErrors, {
+        upload: upload
+      }, function(x) {
+        return x.upload.id;
+      });
+      if (prevError == null) {
+        newErrors.splice(index, 0, {
+          upload: upload,
+          error: curError
+        });
+      } else if (curError == null) {
+        newErrors.splice(index, 1);
+      } else {
+        newErrors[index].error = curError;
+      }
+      return this.set('uploadErrors', newErrors);
+    },
+    _onUploadBatchAdded: function(uploads) {
+      var error, upload, _i, _len;
+      for (_i = 0, _len = uploads.length; _i < _len; _i++) {
+        upload = uploads[_i];
+        error = upload.get('error');
+        if (error != null) {
+          this._mergeUploadError(upload, null, error);
+        }
+      }
+      return this._forceBestTick();
+    },
+    _onUploadChanged: function(upload) {
+      var error1, error2;
       error1 = upload.previous('error');
       error2 = upload.get('error');
       if (error1 !== error2) {
-        newErrors = this.get('uploadErrors').slice(0);
-        index = _.sortedIndex(newErrors, {
-          upload: upload
-        }, function(x) {
-          return x.upload.id;
-        });
-        if (!error1) {
-          newErrors.splice(index, 0, {
-            upload: upload,
-            error: error2
-          });
-        } else if (!error2) {
-          newErrors.splice(index, 1);
-        } else {
-          newErrors[index].error = error2;
-        }
-        this.set('uploadErrors', newErrors);
+        this._mergeUploadError(upload, error1, error2);
       }
       return this._forceBestTick();
     },

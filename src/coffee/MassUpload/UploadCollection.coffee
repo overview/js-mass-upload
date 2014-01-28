@@ -70,6 +70,10 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
   #     while ((upload = uploadCollection.next()) != null)
   #       uploader.run(upload)
   #     # Of course, uploading is async, so this can't be a `while` loop.
+  #
+  # Callers may listen for the 'add-batch' event. It will be called with an
+  # Array of Upload elements. (This is much faster than listening to the 'add'
+  # event. Callers can assume 'add-batch' will be called for all additions.)
   class UploadCollection extends Backbone.Collection
     model: Upload
 
@@ -140,4 +144,6 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
         else
           toAdd.push(upload)
 
-      @add(toAdd)
+      if toAdd.length
+        @add(toAdd)
+        @trigger('add-batch', toAdd)

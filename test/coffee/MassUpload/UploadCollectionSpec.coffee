@@ -14,7 +14,15 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
     afterEach -> subject?.off()
 
     describe 'addFiles() when file does not exist', ->
-      beforeEach -> subject.addFiles([ file1, file2 ])
+      addBatchArgs = null
+
+      beforeEach ->
+        addBatchArgs = []
+        subject.on('add-batch', (uploads) -> addBatchArgs.push(uploads))
+        subject.addFiles([ file1, file2 ])
+
+      afterEach ->
+        subject.off('add-batch')
 
       it 'should create Upload objects', ->
         expect(subject.length).toEqual(2)
@@ -27,18 +35,40 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
         expect(upload2.attributes.fileInfo).toBe(null)
         expect(upload2.attributes.error).toBe(null)
 
+      it 'should trigger add-batch', ->
+        expect(addBatchArgs.length).toEqual(1)
+        expect(addBatchArgs[0].length).toEqual(2)
+        expect(addBatchArgs[0][0].attributes.file).toBe(file1)
+
     describe 'addFiles() when an un-uploaded file already exists', ->
       file1 = { name: 'file1.txt', lastModifiedDate: date1, size: 10000 }
+      addBatchArgs = null
 
       beforeEach ->
+        addBatchArgs = []
+        subject.on('add-batch', (uploads) -> addBatchArgs.push(uploads))
         subject.addFiles([ file1 ])
         subject.addFiles([ file1 ])
+
+      afterEach ->
+        subject.off('add-batch')
 
       it 'should not duplicate the file', ->
         expect(subject.length).toEqual(1)
 
+      it 'should not trigger add-batch when merging', ->
+        expect(addBatchArgs.length).toEqual(1)
+
     describe 'addFileInfos() when fileInfo does not exist', ->
-      beforeEach -> subject.addFileInfos([fileInfo1])
+      addBatchArgs = null
+
+      beforeEach ->
+        addBatchArgs = []
+        subject.on('add-batch', (uploads) -> addBatchArgs.push(uploads))
+        subject.addFileInfos([fileInfo1])
+
+      afterEach ->
+        subject.off('add-batch')
 
       it 'should create Upload objects', ->
         expect(subject.length).toEqual(1)
@@ -50,6 +80,11 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
       it 'should not re-add existing fileInfos', ->
         subject.addFileInfos([fileInfo1])
         expect(subject.length).toEqual(1)
+
+      it 'should trigger add-batch', ->
+        expect(addBatchArgs.length).toEqual(1)
+        expect(addBatchArgs[0].length).toEqual(1)
+        expect(addBatchArgs[0][0].attributes.fileInfo).toBe(fileInfo1)
 
     describe 'with a file-backed Upload', ->
       file1 = { name: 'file1.txt', lastModifiedDate: date1, size: 10000 }
