@@ -2,6 +2,9 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
   # Helper for use with UploadCollection.next()
   class UploadPriorityQueue
     constructor: ->
+      @_clear()
+
+    _clear: ->
       @deleting = []
       @uploading = []
       @unfinished = []
@@ -23,10 +26,11 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
 
       ret
 
-    add: (upload) ->
-      state = @uploadAttributesToState(upload.attributes)
-      if state?
-        @[state].push(upload)
+    addBatch: (uploads) ->
+      for upload in uploads
+        state = @uploadAttributesToState(upload.attributes)
+        if state?
+          @[state].push(upload)
 
     # Removes upload from the array, if it's there; otherwise does nothing
     _removeUploadFromArray: (upload, array) ->
@@ -49,7 +53,8 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
           @[newState].push(upload)
 
     reset: (collection) ->
-      collection.each(@add, @)
+      @_clear()
+      @addBatch(collection.models)
 
     # Returns the most important pending Upload, or `null`.
     next: ->
@@ -79,7 +84,8 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
 
     initialize: ->
       @_priorityQueue = new UploadPriorityQueue()
-      for event in [ 'change', 'add', 'remove', 'reset' ]
+      @on('add-batch', @_priorityQueue.addBatch, @_priorityQueue)
+      for event in [ 'change', 'remove', 'reset' ]
         @on(event, @_priorityQueue[event], @_priorityQueue)
       @_priorityQueue.reset(@)
 

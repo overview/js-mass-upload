@@ -445,31 +445,44 @@ define('MassUpload/FileInfo',[],function() {
   return FileInfo;
 });
 
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
 define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileInfo) {
-  return Backbone.Model.extend({
-    defaults: {
+  var Upload, _ref;
+  return Upload = (function(_super) {
+    __extends(Upload, _super);
+
+    function Upload() {
+      _ref = Upload.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    Upload.prototype.defaults = {
       file: null,
       fileInfo: null,
       error: null,
       uploading: false,
       deleting: false
-    },
-    initialize: function(attributes) {
-      var fileLike, id, _ref;
-      fileLike = (_ref = attributes.file) != null ? _ref : attributes.fileInfo;
+    };
+
+    Upload.prototype.initialize = function(attributes) {
+      var fileLike, id, _ref1;
+      fileLike = (_ref1 = attributes.file) != null ? _ref1 : attributes.fileInfo;
       id = fileLike.name;
       return this.set({
         id: id
       });
-    },
-    updateWithProgress: function(progressEvent) {
-      var fileInfo;
-      fileInfo = FileInfo.fromFile(this.get('file'));
-      fileInfo.loaded = progressEvent.loaded;
-      fileInfo.total = progressEvent.total;
+    };
+
+    Upload.prototype.updateWithProgress = function(progressEvent) {
+      var fileInfo, fstat;
+      fstat = this.fstatSync();
+      fileInfo = new FileInfo(this.id, fstat.lastModifiedDate, progressEvent.total, progressEvent.loaded);
       return this.set('fileInfo', fileInfo);
-    },
-    getProgress: function() {
+    };
+
+    Upload.prototype.getProgress = function() {
       var file, fileInfo;
       if (((fileInfo = this.get('fileInfo')) != null) && !this.hasConflict()) {
         return {
@@ -482,8 +495,9 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
           total: this.fstatSync().size
         };
       }
-    },
-    fstatSync: function() {
+    };
+
+    Upload.prototype.fstatSync = function() {
       var file;
       file = this.get('file');
       if (file != null) {
@@ -492,20 +506,25 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
           lastModifiedDate: file.lastModifiedDate
         };
       }
-    },
-    isFullyUploaded: function() {
+    };
+
+    Upload.prototype.isFullyUploaded = function() {
       var error, fileInfo;
       fileInfo = this.get('fileInfo');
       error = this.get('error');
       return !this.get('uploading') && !this.get('deleting') && (this.get('error') == null) && (fileInfo != null) && fileInfo.loaded === fileInfo.total;
-    },
-    hasConflict: function() {
+    };
+
+    Upload.prototype.hasConflict = function() {
       var file, fileInfo;
       fileInfo = this.get('fileInfo');
       file = this.get('file');
       return (fileInfo != null) && (file != null) && (fileInfo.name !== file.name || fileInfo.lastModifiedDate.getTime() !== this.fstatSync().lastModifiedDate.getTime() || fileInfo.total !== this.fstatSync().size);
-    }
-  });
+    };
+
+    return Upload;
+
+  })(Backbone.Model);
 });
 
 var __hasProp = {}.hasOwnProperty,
@@ -515,11 +534,15 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
   var UploadCollection, UploadPriorityQueue, _ref;
   UploadPriorityQueue = (function() {
     function UploadPriorityQueue() {
+      this._clear();
+    }
+
+    UploadPriorityQueue.prototype._clear = function() {
       this.deleting = [];
       this.uploading = [];
       this.unfinished = [];
-      this.unstarted = [];
-    }
+      return this.unstarted = [];
+    };
 
     UploadPriorityQueue.prototype.uploadAttributesToState = function(uploadAttributes) {
       var ret;
@@ -527,12 +550,19 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
       return ret;
     };
 
-    UploadPriorityQueue.prototype.add = function(upload) {
-      var state;
-      state = this.uploadAttributesToState(upload.attributes);
-      if (state != null) {
-        return this[state].push(upload);
+    UploadPriorityQueue.prototype.addBatch = function(uploads) {
+      var state, upload, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = uploads.length; _i < _len; _i++) {
+        upload = uploads[_i];
+        state = this.uploadAttributesToState(upload.attributes);
+        if (state != null) {
+          _results.push(this[state].push(upload));
+        } else {
+          _results.push(void 0);
+        }
       }
+      return _results;
     };
 
     UploadPriorityQueue.prototype._removeUploadFromArray = function(upload, array) {
@@ -566,7 +596,8 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     };
 
     UploadPriorityQueue.prototype.reset = function(collection) {
-      return collection.each(this.add, this);
+      this._clear();
+      return this.addBatch(collection.models);
     };
 
     UploadPriorityQueue.prototype.next = function() {
@@ -590,7 +621,8 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     UploadCollection.prototype.initialize = function() {
       var event, _i, _len, _ref1;
       this._priorityQueue = new UploadPriorityQueue();
-      _ref1 = ['change', 'add', 'remove', 'reset'];
+      this.on('add-batch', this._priorityQueue.addBatch, this._priorityQueue);
+      _ref1 = ['change', 'remove', 'reset'];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         event = _ref1[_i];
         this.on(event, this._priorityQueue[event], this._priorityQueue);

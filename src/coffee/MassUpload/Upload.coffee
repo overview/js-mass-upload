@@ -26,7 +26,7 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
   # There is no way to tell, from looking at an Upload, whether it is fully
   # deleted: instead, do something when the Upload with `deleting=true` has
   # been removed from its UploadCollection.
-  Backbone.Model.extend
+  class Upload extends Backbone.Model
     defaults:
       file: null
       fileInfo: null
@@ -44,9 +44,8 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
     # `progressEvent` must have `loaded` and `total` properties.
     updateWithProgress: (progressEvent) ->
       # Always create a new FileInfo object, whether one exists or not.
-      fileInfo = FileInfo.fromFile(@get('file'))
-      fileInfo.loaded = progressEvent.loaded
-      fileInfo.total = progressEvent.total
+      fstat = @fstatSync()
+      fileInfo = new FileInfo(@id, fstat.lastModifiedDate, progressEvent.total, progressEvent.loaded)
       @set('fileInfo', fileInfo)
 
     # Returns a progress object with `loaded` and `total` properties.
