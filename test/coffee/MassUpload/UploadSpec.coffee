@@ -27,6 +27,9 @@ define [ 'MassUpload/Upload' ], (Upload) ->
       it 'should have getProgress() return 0/size', ->
         expect(subject.getProgress()).toEqual({ loaded: 0, total: file.size })
 
+      it 'should have fstatSync() return name and lastModifiedDate', ->
+        expect(subject.fstatSync()).toEqual({ size: 10000, lastModifiedDate: date1 })
+
       describe 'updateWithProgress', ->
         beforeEach ->
           subject.set('uploading', true)

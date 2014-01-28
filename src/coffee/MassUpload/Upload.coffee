@@ -54,7 +54,16 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
       if (fileInfo = @get('fileInfo'))? && !@hasConflict()
         { loaded: fileInfo.loaded, total: fileInfo.total }
       else if (file = @get('file'))?
-        { loaded: 0, total: file.size }
+        { loaded: 0, total: @fstatSync().size }
+
+    # Memoizes file.size and file.lastModifiedDate, to avoid hitting disk.
+    #
+    # This call is synchronous: it may take milliseconds on a slow system, but
+    # only the first time (per file).
+    fstatSync: ->
+      file = @get('file')
+      if file?
+        @_fstat ?= { size: file.size, lastModifiedDate: file.lastModifiedDate }
 
     # True iff the file has been successfully uploaded.
     isFullyUploaded: ->
@@ -74,6 +83,6 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
       file = @get('file')
       fileInfo? && file? && (
         fileInfo.name != file.name ||
-        fileInfo.lastModifiedDate.getTime() != file.lastModifiedDate.getTime() ||
-        fileInfo.total != file.size
+        fileInfo.lastModifiedDate.getTime() != @fstatSync().lastModifiedDate.getTime() ||
+        fileInfo.total != @fstatSync().size
       )

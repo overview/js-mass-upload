@@ -55,7 +55,17 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
       } else if ((file = this.get('file')) != null) {
         return {
           loaded: 0,
-          total: file.size
+          total: this.fstatSync().size
+        };
+      }
+    },
+    fstatSync: function() {
+      var file;
+      file = this.get('file');
+      if (file != null) {
+        return this._fstat != null ? this._fstat : this._fstat = {
+          size: file.size,
+          lastModifiedDate: file.lastModifiedDate
         };
       }
     },
@@ -69,7 +79,7 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
       var file, fileInfo;
       fileInfo = this.get('fileInfo');
       file = this.get('file');
-      return (fileInfo != null) && (file != null) && (fileInfo.name !== file.name || fileInfo.lastModifiedDate.getTime() !== file.lastModifiedDate.getTime() || fileInfo.total !== file.size);
+      return (fileInfo != null) && (file != null) && (fileInfo.name !== file.name || fileInfo.lastModifiedDate.getTime() !== this.fstatSync().lastModifiedDate.getTime() || fileInfo.total !== this.fstatSync().size);
     }
   });
 });
