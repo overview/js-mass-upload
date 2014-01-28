@@ -74,7 +74,7 @@ define [
   # * If stuck in `listing-files-error` status, call retryListFiles().
   # * To remove upload/delete errors, call retryUpload(upload) or
   #   retryAllUploads().
-  Backbone.Model.extend
+  class MassUpload extends Backbone.Model
     defaults: ->
       status: 'waiting'
       listFilesProgress: null
@@ -85,7 +85,7 @@ define [
     # We never pass attributes to the constructor
     constructor: (options) ->
       @_removedUploads = [] # uploads removed by the user, still on the server
-      Backbone.Model.call(this, {}, options)
+      super({}, options)
 
     initialize: (attributes, options) ->
       @_options = options

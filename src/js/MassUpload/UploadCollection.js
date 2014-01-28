@@ -1,8 +1,5 @@
-var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
 define(['backbone', './Upload'], function(Backbone, Upload) {
-  var UploadCollection, UploadPriorityQueue, _ref;
+  var UploadCollection, UploadPriorityQueue;
   UploadPriorityQueue = (function() {
     function UploadPriorityQueue() {
       this._clear();
@@ -66,9 +63,9 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
       }
     };
 
-    UploadPriorityQueue.prototype.reset = function(collection) {
+    UploadPriorityQueue.prototype.reset = function(uploads) {
       this._clear();
-      return this.addBatch(collection.models);
+      return this.addBatch(uploads);
     };
 
     UploadPriorityQueue.prototype.next = function() {
@@ -79,26 +76,58 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
     return UploadPriorityQueue;
 
   })();
-  return UploadCollection = (function(_super) {
-    __extends(UploadCollection, _super);
+  return UploadCollection = (function() {
+    UploadCollection.prototype = Object.create(Backbone.Events);
 
     function UploadCollection() {
-      _ref = UploadCollection.__super__.constructor.apply(this, arguments);
-      return _ref;
+      this.models = [];
+      this._priorityQueue = new UploadPriorityQueue();
+      this.reset([]);
     }
 
-    UploadCollection.prototype.model = Upload;
+    UploadCollection.prototype.each = function(func, context) {
+      return this.models.forEach(func, context);
+    };
 
-    UploadCollection.prototype.initialize = function() {
-      var event, _i, _len, _ref1;
-      this._priorityQueue = new UploadPriorityQueue();
-      this.on('add-batch', this._priorityQueue.addBatch, this._priorityQueue);
-      _ref1 = ['change', 'remove', 'reset'];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        event = _ref1[_i];
-        this.on(event, this._priorityQueue[event], this._priorityQueue);
+    UploadCollection.prototype._prepareModel = function(upload) {
+      if (upload instanceof Upload) {
+        return upload;
+      } else {
+        return new Upload(upload);
       }
-      return this._priorityQueue.reset(this);
+    };
+
+    UploadCollection.prototype.reset = function(uploads) {
+      var upload, _i, _j, _len, _len1, _ref, _ref1;
+      _ref = this.models;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        upload = _ref[_i];
+        upload.off('all', this._onUploadEvent, this);
+      }
+      this.models = (function() {
+        var _j, _len1, _results;
+        _results = [];
+        for (_j = 0, _len1 = uploads.length; _j < _len1; _j++) {
+          upload = uploads[_j];
+          _results.push(this._prepareModel(upload));
+        }
+        return _results;
+      }).call(this);
+      this.length = this.models.length;
+      this._idToModel = {};
+      _ref1 = this.models;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        upload = _ref1[_j];
+        upload.on('all', this._onUploadEvent, this);
+        this._idToModel[upload.id] = upload;
+      }
+      this._priorityQueue.reset(this.models);
+      return this.trigger('reset', uploads);
+    };
+
+    UploadCollection.prototype.get = function(id) {
+      var _ref;
+      return (_ref = this._idToModel[id]) != null ? _ref : null;
     };
 
     UploadCollection.prototype.addFiles = function(files) {
@@ -137,6 +166,40 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
       return this._priorityQueue.next();
     };
 
+    UploadCollection.prototype.add = function(uploadOrUploads) {
+      if (uploadOrUploads.length != null) {
+        return this.addBatch(uploadOrUploads);
+      } else {
+        return this.addBatch([uploadOrUploads]);
+      }
+    };
+
+    UploadCollection.prototype.addBatch = function(uploads) {
+      var upload, _i, _j, _len, _len1;
+      for (_i = 0, _len = uploads.length; _i < _len; _i++) {
+        upload = uploads[_i];
+        this._idToModel[upload.id] = upload;
+        upload.on('all', this._onUploadEvent, this);
+        this.models.push(upload);
+      }
+      this.length += uploads.length;
+      this._priorityQueue.addBatch(uploads);
+      for (_j = 0, _len1 = uploads.length; _j < _len1; _j++) {
+        upload = uploads[_j];
+        this.trigger('add', upload);
+      }
+      return this.trigger('add-batch', uploads);
+    };
+
+    UploadCollection.prototype._onUploadEvent = function(event, model, collection, options) {
+      if (event !== 'add' && event !== 'remove') {
+        this.trigger.apply(this, arguments);
+      }
+      if (event === 'change') {
+        return this._priorityQueue.change(model);
+      }
+    };
+
     UploadCollection.prototype._addWithMerge = function(uploads) {
       var existingUpload, file, fileInfo, toAdd, upload, _i, _len;
       toAdd = [];
@@ -161,11 +224,11 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
       }
       if (toAdd.length) {
         this.add(toAdd);
-        return this.trigger('add-batch', toAdd);
+        return this._priorityQueue.addBatch(toAdd);
       }
     };
 
     return UploadCollection;
 
-  })(Backbone.Collection);
+  })();
 });

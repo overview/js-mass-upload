@@ -52,15 +52,15 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
         if newState?
           @[newState].push(upload)
 
-    reset: (collection) ->
+    reset: (uploads) ->
       @_clear()
-      @addBatch(collection.models)
+      @addBatch(uploads)
 
     # Returns the most important pending Upload, or `null`.
     next: ->
       @deleting[0] ? @uploading[0] ? @unfinished[0] ? @unstarted[0] ? null
 
-  # A collection of Upload objects.
+  # A collection of Upload objects, in the spirit of Backbone.Collection.
   #
   # Here's how to modify this collection:
   #
@@ -79,15 +79,44 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
   # Callers may listen for the 'add-batch' event. It will be called with an
   # Array of Upload elements. (This is much faster than listening to the 'add'
   # event. Callers can assume 'add-batch' will be called for all additions.)
-  class UploadCollection extends Backbone.Collection
-    model: Upload
+  #
+  # To mock this collection, just use a Backbone.Collection, and have it
+  # trigger "add-batch" after each add.
+  class UploadCollection
+    @:: = Object.create(Backbone.Events)
 
-    initialize: ->
+    constructor: ->
+      @models = []
       @_priorityQueue = new UploadPriorityQueue()
-      @on('add-batch', @_priorityQueue.addBatch, @_priorityQueue)
-      for event in [ 'change', 'remove', 'reset' ]
-        @on(event, @_priorityQueue[event], @_priorityQueue)
-      @_priorityQueue.reset(@)
+      @reset([])
+
+    each: (func, context) ->
+      @models.forEach(func, context)
+
+    _prepareModel: (upload) ->
+      if upload instanceof Upload
+        upload
+      else
+        new Upload(upload)
+
+    reset: (uploads) ->
+      for upload in @models
+        upload.off('all', @_onUploadEvent, this)
+
+      @models = (@_prepareModel(upload) for upload in uploads)
+      @length = @models.length
+
+      @_idToModel = {}
+      for upload in @models
+        upload.on('all', @_onUploadEvent, this)
+        @_idToModel[upload.id] = upload
+
+      @_priorityQueue.reset(@models)
+      @trigger('reset', uploads)
+
+    # Finds the model with the given ID in the collection, or null. O(1).
+    get: (id) ->
+      @_idToModel[id] ? null
 
     # Adds some user-selected files to the collection.
     #
@@ -107,7 +136,7 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
       uploads = (new Upload({ fileInfo: fileInfo }) for fileInfo in fileInfos)
       @_addWithMerge(uploads)
 
-    # Finds the next operation.
+    # Finds the next upload to handle.
     #
     # If any deletions are pending (uploads have deleting=true), those come
     # first (because they cause user-visible lag and potentially the user is
@@ -134,6 +163,33 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
     next: ->
       @_priorityQueue.next()
 
+    # Adds an Upload or array of Uploads.
+    add: (uploadOrUploads) ->
+      if uploadOrUploads.length?
+        @addBatch(uploadOrUploads)
+      else
+        @addBatch([uploadOrUploads])
+
+    addBatch: (uploads) ->
+      for upload in uploads
+        @_idToModel[upload.id] = upload
+        upload.on('all', @_onUploadEvent, this)
+        @models.push(upload)
+
+      @length += uploads.length
+
+      @_priorityQueue.addBatch(uploads)
+      for upload in uploads
+        @trigger('add', upload)
+      @trigger('add-batch', uploads)
+
+    _onUploadEvent: (event, model, collection, options) ->
+      if event != 'add' && event != 'remove'
+        @trigger.apply(this, arguments)
+
+      if event == 'change'
+        @_priorityQueue.change(model)
+
     # Like add([...], merge: true), but it never subtracts attributes.
     #
     # In other words, _addWithMerge() will _set_ file or fileInfo on models,
@@ -152,4 +208,4 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
 
       if toAdd.length
         @add(toAdd)
-        @trigger('add-batch', toAdd)
+        @_priorityQueue.addBatch(toAdd)
