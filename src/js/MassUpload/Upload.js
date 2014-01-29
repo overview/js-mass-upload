@@ -1,15 +1,7 @@
-var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
 define(['backbone', './FileInfo'], function(Backbone, FileInfo) {
-  var Upload, _ref;
-  return Upload = (function(_super) {
-    __extends(Upload, _super);
-
-    function Upload() {
-      _ref = Upload.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
+  var Upload;
+  return Upload = (function() {
+    Upload.prototype = Object.create(Backbone.Events);
 
     Upload.prototype.defaults = {
       file: null,
@@ -19,63 +11,77 @@ define(['backbone', './FileInfo'], function(Backbone, FileInfo) {
       deleting: false
     };
 
-    Upload.prototype.initialize = function(attributes) {
-      var fileLike, id, _ref1;
-      fileLike = (_ref1 = attributes.file) != null ? _ref1 : attributes.fileInfo;
-      id = fileLike.name;
-      return this.set({
-        id: id
-      });
+    function Upload(attributes) {
+      var _ref, _ref1, _ref2, _ref3;
+      this.file = (_ref = attributes.file) != null ? _ref : null;
+      this.fileInfo = (_ref1 = attributes.fileInfo) != null ? _ref1 : null;
+      this.error = (_ref2 = attributes.error) != null ? _ref2 : null;
+      this.uploading = attributes.uploading || false;
+      this.deleting = attributes.deleting || false;
+      this.id = ((_ref3 = this.fileInfo) != null ? _ref3 : this.file).name;
+      this.attributes = this;
+    }
+
+    Upload.prototype.get = function(attr) {
+      return this[attr];
+    };
+
+    Upload.prototype.set = function(attrs) {
+      var k, v;
+      this._previousAttributes = new Upload(this);
+      for (k in attrs) {
+        v = attrs[k];
+        this[k] = v;
+      }
+      this.trigger('change', this);
+      return this._previousAttributes = null;
+    };
+
+    Upload.prototype.previousAttributes = function() {
+      return this._previousAttributes;
+    };
+
+    Upload.prototype.size = function() {
+      var _ref;
+      return this._size != null ? this._size : this._size = (_ref = this.file) != null ? _ref.size : void 0;
+    };
+
+    Upload.prototype.lastModifiedDate = function() {
+      var _ref;
+      return this._lastModifiedDate != null ? this._lastModifiedDate : this._lastModifiedDate = (_ref = this.file) != null ? _ref.lastModifiedDate : void 0;
     };
 
     Upload.prototype.updateWithProgress = function(progressEvent) {
-      var fileInfo, fstat;
-      fstat = this.fstatSync();
-      fileInfo = new FileInfo(this.id, fstat.lastModifiedDate, progressEvent.total, progressEvent.loaded);
-      return this.set('fileInfo', fileInfo);
+      var fileInfo;
+      fileInfo = new FileInfo(this.id, this.lastModifiedDate(), progressEvent.total, progressEvent.loaded);
+      return this.set({
+        fileInfo: fileInfo
+      });
     };
 
     Upload.prototype.getProgress = function() {
-      var file, fileInfo;
-      if (((fileInfo = this.get('fileInfo')) != null) && !this.hasConflict()) {
+      if ((this.fileInfo != null) && !this.hasConflict()) {
         return {
-          loaded: fileInfo.loaded,
-          total: fileInfo.total
+          loaded: this.fileInfo.loaded,
+          total: this.fileInfo.total
         };
-      } else if ((file = this.get('file')) != null) {
+      } else if (this.file != null) {
         return {
           loaded: 0,
-          total: this.fstatSync().size
-        };
-      }
-    };
-
-    Upload.prototype.fstatSync = function() {
-      var file;
-      file = this.get('file');
-      if (file != null) {
-        return this._fstat != null ? this._fstat : this._fstat = {
-          size: file.size,
-          lastModifiedDate: file.lastModifiedDate
+          total: this.size()
         };
       }
     };
 
     Upload.prototype.isFullyUploaded = function() {
-      var error, fileInfo;
-      fileInfo = this.get('fileInfo');
-      error = this.get('error');
-      return !this.get('uploading') && !this.get('deleting') && (this.get('error') == null) && (fileInfo != null) && fileInfo.loaded === fileInfo.total;
+      return (this.fileInfo != null) && (this.error == null) && !this.uploading && !this.deleting && this.fileInfo.loaded === this.fileInfo.total;
     };
 
     Upload.prototype.hasConflict = function() {
-      var file, fileInfo;
-      fileInfo = this.get('fileInfo');
-      file = this.get('file');
-      return (fileInfo != null) && (file != null) && (fileInfo.name !== file.name || fileInfo.lastModifiedDate.getTime() !== this.fstatSync().lastModifiedDate.getTime() || fileInfo.total !== this.fstatSync().size);
+      return (this.fileInfo != null) && (this.file != null) && (this.fileInfo.name !== this.id || this.fileInfo.total !== this.size() || this.fileInfo.lastModifiedDate.getTime() !== this.lastModifiedDate().getTime());
     };
 
     return Upload;
 
-  })(Backbone.Model);
+  })();
 });

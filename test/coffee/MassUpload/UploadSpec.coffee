@@ -27,12 +27,15 @@ define [ 'MassUpload/Upload' ], (Upload) ->
       it 'should have getProgress() return 0/size', ->
         expect(subject.getProgress()).toEqual({ loaded: 0, total: file.size })
 
-      it 'should have fstatSync() return name and lastModifiedDate', ->
-        expect(subject.fstatSync()).toEqual({ size: 10000, lastModifiedDate: date1 })
+      it 'should have size(), a memoized size', ->
+        expect(subject.size()).toEqual(10000)
+
+      it 'should have lastModifiedDate(), a memoized lastModifiedDate', ->
+        expect(subject.lastModifiedDate()).toEqual(date1)
 
       describe 'updateWithProgress', ->
         beforeEach ->
-          subject.set('uploading', true)
+          subject.uploading = true
           subject.updateWithProgress({ loaded: 2000, total: 10000 })
 
         it 'should create a fileInfo', ->
@@ -44,7 +47,7 @@ define [ 'MassUpload/Upload' ], (Upload) ->
           expect(fileInfo.loaded).toEqual(2000)
 
         it 'should have isFullyUploaded=false because loaded != total', ->
-          subject.set('uploading', false)
+          subject.uploading = false
           expect(subject.isFullyUploaded()).toBe(false)
 
         it 'should have getProgress() return the progress', ->
@@ -64,7 +67,7 @@ define [ 'MassUpload/Upload' ], (Upload) ->
         expect(subject.isFullyUploaded()).toBe(true)
 
       it 'should have isFullyUploaded=false if deleting=true', ->
-        subject.set('deleting', true)
+        subject.deleting = true
         expect(subject.isFullyUploaded()).toBe(false)
 
     describe 'starting with an incomplete FileInfo', ->
@@ -90,11 +93,11 @@ define [ 'MassUpload/Upload' ], (Upload) ->
         expect(subject.isFullyUploaded()).toBe(true)
 
       it 'should have isFullyUploaded=false if error!=null', ->
-        subject.set('error', 'an error')
+        subject.error = 'an error'
         expect(subject.isFullyUploaded()).toBe(false)
 
       it 'should have isFullyUploaded=false if uploading=true', ->
-        subject.set('uploading', true)
+        subject.uploading = true
         expect(subject.isFullyUploaded()).toBe(false)
 
     describe 'with incompatible File and FileInfo', ->

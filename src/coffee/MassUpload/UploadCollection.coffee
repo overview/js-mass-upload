@@ -31,6 +31,7 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
         state = @uploadAttributesToState(upload.attributes)
         if state?
           @[state].push(upload)
+      undefined
 
     # Removes upload from the array, if it's there; otherwise does nothing
     _removeUploadFromArray: (upload, array) ->
@@ -52,7 +53,7 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
         if newState?
           @[newState].push(upload)
 
-    reset: (uploads) ->
+    reset: (uploads = []) ->
       @_clear()
       @addBatch(uploads)
 
@@ -208,4 +209,5 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
 
       if toAdd.length
         @add(toAdd)
-        @_priorityQueue.addBatch(toAdd)
+
+      undefined

@@ -91,10 +91,15 @@ define [
       @_options = options
       @uploads = options?.uploads ? new UploadCollection()
 
+      # Make @get('uploadProgress') a flat object, not a Backbone.Model
+      @_uploadProgress = new UploadProgress({ uploadCollection: @uploads })
+      resetUploadProgress = =>
+        @set(uploadProgress: @_uploadProgress.pick('loaded', 'total'))
+      @listenTo(@_uploadProgress, 'change', resetUploadProgress)
+      resetUploadProgress()
+
       @listenTo(@uploads, 'add-batch', @_onUploadBatchAdded)
-      @listenTo(@uploads, 'change:file change:error', (upload) => @_onUploadChanged(upload))
-      @listenTo(@uploads, 'change:deleting', (upload) => @_onUploadDeleted(upload))
-      @listenTo(@uploads, 'remove', (upload) => @_onUploadRemoved(upload))
+      @listenTo(@uploads, 'change', (upload) => @_onUploadChanged(upload))
       @listenTo(@uploads, 'reset', => @_onUploadsReset())
 
       @prepare()
@@ -124,13 +129,6 @@ define [
         onError: (fileInfo, errorDetail) => @_onDeleterError(fileInfo, errorDetail)
         onStop: (fileInfo) => @_onDeleterStop(fileInfo)
 
-      # Make @get('uploadProgress') a flat object, not a Backbone.Model
-      @_uploadProgress = new UploadProgress({ collection: @uploads })
-      resetUploadProgress = =>
-        @set(uploadProgress: @_uploadProgress.pick('loaded', 'total'))
-      @listenTo(@_uploadProgress, 'change', resetUploadProgress)
-      resetUploadProgress()
-
     fetchFileInfosFromServer: ->
       @lister.run()
 
@@ -138,21 +136,21 @@ define [
       @fetchFileInfosFromServer()
 
     retryUpload: (upload) ->
-      upload.set('error', null)
+      upload.set(error: null)
 
     retryAllUploads: ->
       # Set error=null from first to last. That way, _forceBestTick() will
       # only abort at most once, since uploads.next() will return the same
       # Upload every call.
       @uploads.each (upload) ->
-        upload.set('error', null)
+        upload.set(error: null)
 
     addFiles: (files) ->
       @_uploadProgress.inBatch =>
         @uploads.addFiles(files)
 
     removeUpload: (upload) ->
-      upload.set('deleting', true)
+      upload.set(deleting: true)
 
     abort: ->
       @uploads.each (upload) =>
@@ -161,19 +159,21 @@ define [
       @prepare()
 
     _onListerStart: ->
-      @set('status', 'listing-files')
-      @set('listFilesError', null)
+      @set
+        status: 'listing-files'
+        listFilesError: null
 
     _onListerProgress: (progressEvent) ->
-      @set('listFilesProgress', progressEvent)
+      @set(listFilesProgress: progressEvent)
 
     _onListerSuccess: (fileInfos) ->
       @uploads.addFileInfos(fileInfos)
       @_tick()
 
     _onListerError: (errorDetail) ->
-      @set('listFilesError', errorDetail)
-      @set('status', 'listing-files-error')
+      @set
+        listFilesError: errorDetail
+        status: 'listing-files-error'
 
     _onListerStop: ->
       # nothing: @_tick() on success, stall on error
@@ -191,7 +191,7 @@ define [
       else # replace prevError with curError
         newErrors[index].error = curError
 
-      @set('uploadErrors', newErrors)
+      @set(uploadErrors: newErrors)
 
     _onUploadBatchAdded: (uploads) ->
       for upload in uploads
@@ -202,34 +202,28 @@ define [
       @_forceBestTick()
 
     _onUploadChanged: (upload) ->
-      error1 = upload.previous('error')
+      error1 = upload.previousAttributes().error
       error2 = upload.get('error')
       if error1 != error2
         @_mergeUploadError(upload, error1, error2)
 
-      @_forceBestTick()
+      deleting1 = upload.previousAttributes().deleting
+      deleting2 = upload.get('deleting')
 
-    _onUploadRemoved: (upload) ->
-      # nothing
+      if deleting2 && !deleting1
+        @_removedUploads.push(upload)
 
-    _onUploadDeleted: (upload) ->
-      @_removedUploads.push(upload)
       @_forceBestTick()
 
     _onUploadsReset: () ->
       newErrors = []
-      progress = { loaded: 0, total: 0 }
 
       @uploads.each (upload) ->
         if (error = upload.get('error'))
           newErrors.push({ upload: upload, error: error })
-        uploadProgress = upload.getProgress()
-        progress.loaded += uploadProgress.loaded
-        progress.total += uploadProgress.total
 
       @set
         uploadErrors: newErrors
-        uploadProgress: progress
 
       @_tick()
 
@@ -241,7 +235,7 @@ define [
 
     _onUploaderStop: (file) ->
       upload = @uploads.get(file.name)
-      upload.set('uploading', false)
+      upload.set(uploading: false)
       @_tick()
 
     _onUploaderProgress: (file, progressEvent) ->
@@ -250,15 +244,15 @@ define [
 
     _onUploaderError: (file, errorDetail) ->
       upload = @uploads.get(file.name)
-      upload.set('error', errorDetail)
+      upload.set(error: errorDetail)
 
     _onUploaderSuccess: (file) ->
       upload = @uploads.get(file.name)
-      upload.updateWithProgress({ loaded: upload.fstatSync().size, total: upload.fstatSync().size })
+      upload.updateWithProgress({ loaded: upload.size(), total: upload.size() })
       # onUploaderDone sets uploading=false
 
     _onDeleterStart: (fileInfo) ->
-      @set('status', 'uploading')
+      @set(status: 'uploading')
 
     _onDeleterSuccess: (fileInfo) ->
       upload = @uploads.get(fileInfo.name)
@@ -266,7 +260,7 @@ define [
 
     _onDeleterError: (fileInfo, errorDetail) ->
       upload = @uploads.get(fileInfo.name)
-      upload.set('error', errorDetail)
+      upload.set(error: errorDetail)
 
     _onDeleterStop: (fileInfo) ->
       @_tick()
@@ -293,7 +287,7 @@ define [
         else
           'waiting-error'
 
-      @set('status', status)
+      @set(status: status)
 
     # If ticking, aborts and ticks again to work on the highest-priority task
     _forceBestTick: ->

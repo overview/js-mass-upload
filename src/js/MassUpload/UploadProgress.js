@@ -6,76 +6,71 @@ define(['backbone'], function(Backbone) {
     },
     initialize: function() {
       var collection;
-      collection = this.get('collection');
+      collection = this.get('uploadCollection');
       if (collection == null) {
-        throw 'Must initialize UploadProgress with `collection`, an UploadCollection';
+        throw 'Must initialize UploadProgress with `uploadCollection`, an UploadCollection';
       }
+      this._idToLastKnownProgress = {};
       return this._updateAndStartListening();
     },
-    _updateAndStartListening: function() {
-      var add, adjust, callback, change, cidToLastKnownProgress, collection, eventName, events, remove, reset,
-        _this = this;
-      collection = this.get('collection');
-      adjust = function(dLoaded, dTotal) {
-        _this.set({
-          loaded: _this.get('loaded') + dLoaded,
-          total: _this.get('total') + dTotal
-        });
-        return void 0;
-      };
-      cidToLastKnownProgress = {};
-      add = function(model) {
-        var progress;
+    _adjust: function(dLoaded, dTotal) {
+      return this.set({
+        loaded: this.get('loaded') + dLoaded,
+        total: this.get('total') + dTotal
+      });
+    },
+    add: function(model) {
+      var progress;
+      progress = model.getProgress();
+      this._adjust(progress.loaded, progress.total);
+      return this._idToLastKnownProgress[model.id] = progress;
+    },
+    reset: function(collection) {
+      var idToLastKnownProgress, loaded, model, progress, total, _i, _len, _ref;
+      idToLastKnownProgress = this._idToLastKnownProgress = {};
+      loaded = 0;
+      total = 0;
+      _ref = collection.models;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        model = _ref[_i];
         progress = model.getProgress();
-        adjust(progress.loaded, progress.total);
-        return cidToLastKnownProgress[model.cid] = progress;
-      };
-      remove = function(model) {
-        var progress;
-        progress = cidToLastKnownProgress[model.cid];
-        adjust(-progress.loaded, -progress.total);
-        return delete cidToLastKnownProgress[model.cid];
-      };
-      change = function(model) {
-        var newProgress, oldProgress;
-        oldProgress = cidToLastKnownProgress[model.cid];
-        if (oldProgress != null) {
-          newProgress = model.getProgress();
-          adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
-          return cidToLastKnownProgress[model.cid] = newProgress;
-        }
-      };
-      reset = function() {
-        var progress;
-        cidToLastKnownProgress = {};
-        progress = {
-          loaded: 0,
-          total: 0
-        };
-        _this.get('collection').each(function(model) {
-          var modelProgress;
-          modelProgress = model.getProgress();
-          cidToLastKnownProgress[model.cid] = modelProgress;
-          progress.loaded += modelProgress.loaded;
-          return progress.total += modelProgress.total;
-        });
-        return _this.set(progress);
-      };
-      events = {
-        add: add,
-        remove: remove,
-        change: change,
-        reset: reset
-      };
-      for (eventName in events) {
-        callback = events[eventName];
-        this.listenTo(collection, eventName, callback);
+        idToLastKnownProgress[model.id] = progress;
+        loaded += progress.loaded;
+        total += progress.total;
       }
-      reset();
+      return this.set({
+        loaded: loaded,
+        total: total
+      });
+    },
+    remove: function(model) {
+      var progress;
+      progress = model.getProgress();
+      this._adjust(-progress.loaded, -progress.total);
+      return this._idToLastKnownProgress[model.id] = progress;
+    },
+    change: function(model) {
+      var newProgress, oldProgress;
+      oldProgress = this._idToLastKnownProgress[model.id];
+      if (oldProgress != null) {
+        newProgress = model.getProgress();
+        this._adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
+        return this._idToLastKnownProgress[model.id] = newProgress;
+      }
+    },
+    _updateAndStartListening: function() {
+      var collection, event, _i, _len, _ref;
+      collection = this.get('uploadCollection');
+      _ref = ['add', 'remove', 'change', 'reset'];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        event = _ref[_i];
+        this.listenTo(collection, event, this[event]);
+      }
+      this.reset(collection);
       return void 0;
     },
     inBatch: function(callback) {
-      this.stopListening(this.get('collection'));
+      this.stopListening(this.get('uploadCollection'));
       try {
         return callback();
       } finally {

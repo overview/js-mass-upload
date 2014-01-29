@@ -16,7 +16,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
       @set('id', fileLike.name)
 
     updateWithProgress: ->
-      @set('updateWithProgressArguments', Array.prototype.slice.call(arguments))
+      @set(updateWithProgressArguments: Array.prototype.slice.call(arguments))
 
     getProgress: ->
       if (args = @get('updateWithProgressArguments'))? && args.length
@@ -26,7 +26,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
       else if (file = @get('file'))?
         { loaded: 0, total: file.size }
 
-    fstatSync: -> @get('file')
+    size: -> @get('file').size
 
   FakeUploads = Backbone.Collection.extend
     model: FakeUpload
@@ -226,6 +226,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
         describe 'on abort', ->
           beforeEach ->
             spyOn(subject, 'prepare');
+            subject.set(uploadProgress: { loaded: 0, total: 0 })
             subject.abort()
 
           it 'should have status=waiting', ->
@@ -322,6 +323,7 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
 
       describe 'with a missing file', ->
         beforeEach ->
+          subject.set(uploadProgress: { total: 10000, loaded: 1000 })
           uploads.reset([
             { file: null, fileInfo: fileInfo1, error: null }
           ])

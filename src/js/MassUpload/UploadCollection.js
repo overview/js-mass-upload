@@ -19,18 +19,15 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
     };
 
     UploadPriorityQueue.prototype.addBatch = function(uploads) {
-      var state, upload, _i, _len, _results;
-      _results = [];
+      var state, upload, _i, _len;
       for (_i = 0, _len = uploads.length; _i < _len; _i++) {
         upload = uploads[_i];
         state = this.uploadAttributesToState(upload.attributes);
         if (state != null) {
-          _results.push(this[state].push(upload));
-        } else {
-          _results.push(void 0);
+          this[state].push(upload);
         }
       }
-      return _results;
+      return void 0;
     };
 
     UploadPriorityQueue.prototype._removeUploadFromArray = function(upload, array) {
@@ -64,6 +61,9 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
     };
 
     UploadPriorityQueue.prototype.reset = function(uploads) {
+      if (uploads == null) {
+        uploads = [];
+      }
       this._clear();
       return this.addBatch(uploads);
     };
@@ -224,8 +224,8 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
       }
       if (toAdd.length) {
         this.add(toAdd);
-        return this._priorityQueue.addBatch(toAdd);
       }
+      return void 0;
     };
 
     return UploadCollection;

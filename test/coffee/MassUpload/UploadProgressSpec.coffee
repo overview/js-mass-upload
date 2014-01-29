@@ -3,6 +3,10 @@ define [ 'MassUpload/UploadProgress', 'backbone' ], (UploadProgress, Backbone) -
     defaults:
       loaded: 0
       total: 0
+
+    initialize: ->
+      @id = @cid
+
     getProgress: -> { loaded: @get('loaded'), total: @get('total') }
 
   buildUpload = (loaded, total) ->
@@ -14,7 +18,10 @@ define [ 'MassUpload/UploadProgress', 'backbone' ], (UploadProgress, Backbone) -
 
     beforeEach ->
       collection = new Backbone.Collection()
-      subject = new UploadProgress({ collection: collection })
+      subject = new UploadProgress({ uploadCollection: collection })
+
+    afterEach ->
+      subject?.stopListening()
 
     it 'should start with 0/0', ->
       expect(subject.get('loaded')).toEqual(0)
@@ -22,7 +29,8 @@ define [ 'MassUpload/UploadProgress', 'backbone' ], (UploadProgress, Backbone) -
 
     it 'should start with not 0/0 if there are uploads already', ->
       collection = new Backbone.Collection([ buildUpload(10, 20) ])
-      subject = new UploadProgress({ collection: collection })
+      subject.stopListening()
+      subject = new UploadProgress({ uploadCollection: collection })
       expect(subject.get('loaded')).toEqual(10)
       expect(subject.get('total')).toEqual(20)
 
@@ -37,7 +45,8 @@ define [ 'MassUpload/UploadProgress', 'backbone' ], (UploadProgress, Backbone) -
     it 'should ignore a set that happens before add is complete (race condition)', ->
       collection = new Backbone.Collection()
       collection.on('add', (model) -> model.set('foo', 'bar'))
-      subject = new UploadProgress({ collection: collection })
+      subject.stopListening()
+      subject = new UploadProgress({ uploadCollection: collection })
       collection.add(buildUpload(10, 20))
       expect(subject.pick('loaded', 'total')).toEqual({ loaded: 10, total: 20 })
 

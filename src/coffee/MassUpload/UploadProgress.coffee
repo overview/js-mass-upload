@@ -7,56 +7,53 @@ define [ 'backbone' ], (Backbone) ->
       total: 0
 
     initialize: ->
-      collection = @get('collection')
-      throw 'Must initialize UploadProgress with `collection`, an UploadCollection' if !collection?
+      collection = @get('uploadCollection')
+      throw 'Must initialize UploadProgress with `uploadCollection`, an UploadCollection' if !collection?
+
+      @_idToLastKnownProgress = {}
 
       @_updateAndStartListening()
 
-    _updateAndStartListening: ->
-      collection = @get('collection')
+    _adjust: (dLoaded, dTotal) ->
+      @set
+        loaded: @get('loaded') + dLoaded
+        total: @get('total') + dTotal
 
-      adjust = (dLoaded, dTotal) =>
-        @set
-          loaded: @get('loaded') + dLoaded
-          total: @get('total') + dTotal
-        undefined
+    add: (model) ->
+      progress = model.getProgress()
+      @_adjust(progress.loaded, progress.total)
+      @_idToLastKnownProgress[model.id] = progress
 
-      cidToLastKnownProgress = {}
-
-      add = (model) ->
+    reset: (collection) ->
+      idToLastKnownProgress = @_idToLastKnownProgress = {}
+      loaded = 0
+      total = 0
+      for model in collection.models
         progress = model.getProgress()
-        adjust(progress.loaded, progress.total)
-        cidToLastKnownProgress[model.cid] = progress
-      remove = (model) ->
-        progress = cidToLastKnownProgress[model.cid]
-        adjust(-progress.loaded, -progress.total)
-        delete cidToLastKnownProgress[model.cid]
-      change = (model) ->
-        oldProgress = cidToLastKnownProgress[model.cid]
-        if oldProgress? # if !oldProgress? there is a race; it is forthcoming...
-          newProgress = model.getProgress()
-          adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total)
-          cidToLastKnownProgress[model.cid] = newProgress
-      reset = =>
-        cidToLastKnownProgress = {}
-        progress = { loaded: 0, total: 0 }
-        @get('collection').each (model) ->
-          modelProgress = model.getProgress()
-          cidToLastKnownProgress[model.cid] = modelProgress
-          progress.loaded += modelProgress.loaded
-          progress.total += modelProgress.total
-        @set(progress)
+        idToLastKnownProgress[model.id] = progress
+        loaded += progress.loaded
+        total += progress.total
+      @set(loaded: loaded, total: total)
 
-      events =
-        add: add
-        remove: remove
-        change: change
-        reset: reset
+    remove: (model) ->
+      progress = model.getProgress()
+      @_adjust(-progress.loaded, -progress.total)
+      @_idToLastKnownProgress[model.id] = progress
 
-      for eventName, callback of events
-        @listenTo(collection, eventName, callback)
+    change: (model) ->
+      oldProgress = @_idToLastKnownProgress[model.id]
+      if oldProgress? # if there's no oldProgress, then an 'add' is coming
+        newProgress = model.getProgress()
+        @_adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total)
+        @_idToLastKnownProgress[model.id] = newProgress
 
-      reset()
+    _updateAndStartListening: ->
+      collection = @get('uploadCollection')
+
+      for event in [ 'add', 'remove', 'change', 'reset' ]
+        @listenTo(collection, event, @[event])
+
+      @reset(collection)
 
       undefined
 
@@ -65,9 +62,8 @@ define [ 'backbone' ], (Backbone) ->
     # Call this when you know you'll be making large changes to the collection.
     # It will remove Backbone event handlers, so it will never be called.
     inBatch: (callback) ->
-      @stopListening(@get('collection'))
+      @stopListening(@get('uploadCollection'))
       try
         callback()
       finally
         @_updateAndStartListening()
-

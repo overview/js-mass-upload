@@ -26,7 +26,9 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
   # There is no way to tell, from looking at an Upload, whether it is fully
   # deleted: instead, do something when the Upload with `deleting=true` has
   # been removed from its UploadCollection.
-  class Upload extends Backbone.Model
+  class Upload
+    @:: = Object.create(Backbone.Events)
+
     defaults:
       file: null
       fileInfo: null
@@ -34,54 +36,74 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
       uploading: false
       deleting: false
 
-    initialize: (attributes) ->
-      fileLike = attributes.file ? attributes.fileInfo
-      id = fileLike.name
-      @set({ id: id })
+    constructor: (attributes) ->
+      @file = attributes.file ? null
+      @fileInfo = attributes.fileInfo ? null
+      @error = attributes.error ? null
+      @uploading = attributes.uploading || false
+      @deleting = attributes.deleting || false
+      @id = (@fileInfo ? @file).name
+
+      # Backbone.Model compatibility
+      @attributes = this
+
+    # Backbone.Model compatibility
+    get: (attr) -> @[attr]
+
+    # Backbone.Model compatibility
+    set: (attrs) ->
+      @_previousAttributes = new Upload(this)
+
+      for k, v of attrs
+        @[k] = v
+
+      @trigger('change', this)
+
+      @_previousAttributes = null
+
+    # Backbone.Model compatibility
+    previousAttributes: -> @_previousAttributes
+
+    # Returns the memoized file size
+    #
+    # Use this, not @file.size, to avoid repeated synchronous filesystem calls.
+    size: -> @_size ?= @file?.size
+
+    # Returns the memoized lastModifiedDate
+    #
+    # Use this, not @file.lastModifiedDate, to avoid repeated synchronous filesystem calls.
+    lastModifiedDate: -> @_lastModifiedDate ?= @file?.lastModifiedDate
 
     # Updates the `fileInfo` object with the given `progressEvent`.
     #
     # `progressEvent` must have `loaded` and `total` properties.
     updateWithProgress: (progressEvent) ->
       # Always create a new FileInfo object, whether one exists or not.
-      fstat = @fstatSync()
-      fileInfo = new FileInfo(@id, fstat.lastModifiedDate, progressEvent.total, progressEvent.loaded)
-      @set('fileInfo', fileInfo)
+      fileInfo = new FileInfo(@id, @lastModifiedDate(), progressEvent.total, progressEvent.loaded)
+      @set(fileInfo: fileInfo)
 
     # Returns a progress object with `loaded` and `total` properties.
     getProgress: ->
-      if (fileInfo = @get('fileInfo'))? && !@hasConflict()
-        { loaded: fileInfo.loaded, total: fileInfo.total }
-      else if (file = @get('file'))?
-        { loaded: 0, total: @fstatSync().size }
-
-    # Memoizes file.size and file.lastModifiedDate, to avoid hitting disk.
-    #
-    # This call is synchronous: it may take milliseconds on a slow system, but
-    # only the first time (per file).
-    fstatSync: ->
-      file = @get('file')
-      if file?
-        @_fstat ?= { size: file.size, lastModifiedDate: file.lastModifiedDate }
+      if @fileInfo? && !@hasConflict()
+        { loaded: @fileInfo.loaded, total: @fileInfo.total }
+      else if @file?
+        { loaded: 0, total: @size() }
 
     # True iff the file has been successfully uploaded.
     isFullyUploaded: ->
-      fileInfo = @get('fileInfo')
-      error = @get('error')
-      !@get('uploading') &&
-        !@get('deleting') &&
-        !@get('error')? &&
-        fileInfo? && fileInfo.loaded == fileInfo.total
+      @fileInfo? &&
+        !@error? &&
+        !@uploading &&
+        !@deleting &&
+        @fileInfo.loaded == @fileInfo.total
 
     # True iff the file matches up with the fileInfo.
     #
     # This is false if, say, the user has selected a newer version of a file to
     # upload after already uploading a previous version of the same file.
     hasConflict: ->
-      fileInfo = @get('fileInfo')
-      file = @get('file')
-      fileInfo? && file? && (
-        fileInfo.name != file.name ||
-        fileInfo.lastModifiedDate.getTime() != @fstatSync().lastModifiedDate.getTime() ||
-        fileInfo.total != @fstatSync().size
+      @fileInfo? && @file? && (
+        @fileInfo.name != @id ||
+        @fileInfo.total != @size() ||
+        @fileInfo.lastModifiedDate.getTime() != @lastModifiedDate().getTime()
       )
