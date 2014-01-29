@@ -81,10 +81,10 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
     initialize: ->
       throw 'Must specify collection, an UploadCollection' if !@collection?
 
-      @listenTo(@collection, 'change', (model) => @_onChange(model))
-      @listenTo(@collection, 'add', (model, collection, options) => @_onAdd(model, options.at))
-      @listenTo(@collection, 'remove', (model) => @_onRemove(model))
-      @listenTo(@collection, 'reset', => @render())
+      @listenTo(@collection, 'change', @_onChange)
+      @listenTo(@collection, 'add', @_onAdd)
+      @listenTo(@collection, 'remove', @_onRemove)
+      @listenTo(@collection, 'reset', @render)
 
       @render()
 
@@ -99,12 +99,14 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
         progress: upload.getProgress()
         humanReadableSize: humanReadableSize
 
-    _onAdd: (upload, index) ->
+    _onAdd: (upload, collection, options) ->
       html = @_renderUpload(upload)
       $li = Backbone.$(html)
       @els[upload.cid] = liToEls($li)
 
       lis = @ul.childNodes
+
+      index = options?.index || lis.length
 
       if index >= lis.length
         @ul.appendChild($li[0])

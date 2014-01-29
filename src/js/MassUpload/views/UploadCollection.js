@@ -59,22 +59,13 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
     template: _.template("<ul class=\"uploads\">\n  <%= collection.map(renderUpload).join('') %>\n</ul>\n<div class=\"upload-prompt\">\n  <button>\n    <h3>Select files to upload</h3>\n    <h4>Or drag and drop files here</h4>\n  </button>\n  <input type=\"file\" class=\"invisible-file-input\" multiple=\"multiple\" />\n</div>"),
     uploadTemplate: _.template("<li class=\"<%= status %>\" data-cid=\"<%- upload.cid %>\">\n  <a href=\"#\" class=\"delete\">Delete</a>\n  <a href=\"#\" class=\"retry\">Retry</a>\n  <h3><%- upload.id %></h3>\n  <div class=\"status\">\n    <progress value=\"<%= progress.loaded %>\" max=\"<%= progress.total %>\"></progress>\n    <span class=\"text\"><%= humanReadableSize(progress.loaded) %> / <%= humanReadableSize(progress.total) %></span>\n    <span class=\"size\"><%= humanReadableSize(progress.total) %></span>\n    <span class=\"message\"><%- message %></span>\n  </div>\n</li>"),
     initialize: function() {
-      var _this = this;
       if (this.collection == null) {
         throw 'Must specify collection, an UploadCollection';
       }
-      this.listenTo(this.collection, 'change', function(model) {
-        return _this._onChange(model);
-      });
-      this.listenTo(this.collection, 'add', function(model, collection, options) {
-        return _this._onAdd(model, options.at);
-      });
-      this.listenTo(this.collection, 'remove', function(model) {
-        return _this._onRemove(model);
-      });
-      this.listenTo(this.collection, 'reset', function() {
-        return _this.render();
-      });
+      this.listenTo(this.collection, 'change', this._onChange);
+      this.listenTo(this.collection, 'add', this._onAdd);
+      this.listenTo(this.collection, 'remove', this._onRemove);
+      this.listenTo(this.collection, 'reset', this.render);
       return this.render();
     },
     _renderUpload: function(upload) {
@@ -89,12 +80,13 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
         humanReadableSize: humanReadableSize
       });
     },
-    _onAdd: function(upload, index) {
-      var $li, html, laterElement, lis;
+    _onAdd: function(upload, collection, options) {
+      var $li, html, index, laterElement, lis;
       html = this._renderUpload(upload);
       $li = Backbone.$(html);
       this.els[upload.cid] = liToEls($li);
       lis = this.ul.childNodes;
+      index = (options != null ? options.index : void 0) || lis.length;
       if (index >= lis.length) {
         this.ul.appendChild($li[0]);
       } else {

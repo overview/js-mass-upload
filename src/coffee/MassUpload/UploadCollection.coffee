@@ -94,6 +94,9 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
     each: (func, context) ->
       @models.forEach(func, context)
 
+    map: (func, context) ->
+      @models.map(func, context)
+
     _prepareModel: (upload) ->
       if upload instanceof Upload
         upload

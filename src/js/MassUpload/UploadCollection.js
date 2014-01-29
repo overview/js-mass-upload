@@ -89,6 +89,10 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
       return this.models.forEach(func, context);
     };
 
+    UploadCollection.prototype.map = function(func, context) {
+      return this.models.map(func, context);
+    };
+
     UploadCollection.prototype._prepareModel = function(upload) {
       if (upload instanceof Upload) {
         return upload;
