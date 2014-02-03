@@ -1,6 +1,6 @@
 {
   "name": "js-mass-upload",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "main": "mass-upload.js",
   "ignore": [
     "**/.*",

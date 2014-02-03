@@ -13,6 +13,11 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
     beforeEach -> subject = new UploadCollection([])
     afterEach -> subject?.off()
 
+    describe 'reset', ->
+      it 'should reset to empty list without params', ->
+        subject.reset()
+        expect(subject.length).toEqual(0)
+
     describe 'addFiles() when file does not exist', ->
       addBatchArgs = null
 

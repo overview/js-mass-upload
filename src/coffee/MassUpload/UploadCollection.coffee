@@ -107,7 +107,7 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
       for upload in @models
         upload.off('all', @_onUploadEvent, this)
 
-      @models = (@_prepareModel(upload) for upload in uploads)
+      @models = (@_prepareModel(upload) for upload in (uploads ? []))
       @length = @models.length
 
       @_idToModel = {}

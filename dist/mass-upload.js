@@ -220,10 +220,11 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
         upload.off('all', this._onUploadEvent, this);
       }
       this.models = (function() {
-        var _j, _len1, _results;
+        var _j, _len1, _ref1, _results;
+        _ref1 = uploads != null ? uploads : [];
         _results = [];
-        for (_j = 0, _len1 = uploads.length; _j < _len1; _j++) {
-          upload = uploads[_j];
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          upload = _ref1[_j];
           _results.push(this._prepareModel(upload));
         }
         return _results;
