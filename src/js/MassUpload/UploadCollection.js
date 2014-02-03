@@ -127,7 +127,7 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
         this._idToModel[upload.id] = upload;
       }
       this._priorityQueue.reset(this.models);
-      return this.trigger('reset', uploads);
+      return this.trigger('reset', this);
     };
 
     UploadCollection.prototype.get = function(id) {

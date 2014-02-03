@@ -18,6 +18,12 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
         subject.reset()
         expect(subject.length).toEqual(0)
 
+      it 'should return the collection', ->
+        resetSpy = jasmine.createSpy('reset')
+        subject.on('reset', resetSpy)
+        subject.reset()
+        expect(resetSpy).toHaveBeenCalledWith(subject)
+
     describe 'addFiles() when file does not exist', ->
       addBatchArgs = null
 

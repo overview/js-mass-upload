@@ -116,7 +116,7 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
         @_idToModel[upload.id] = upload
 
       @_priorityQueue.reset(@models)
-      @trigger('reset', uploads)
+      @trigger('reset', @)
 
     # Finds the model with the given ID in the collection, or null. O(1).
     get: (id) ->
