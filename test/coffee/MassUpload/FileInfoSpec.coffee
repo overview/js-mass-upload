@@ -39,3 +39,12 @@ define [ 'MassUpload/FileInfo' ], (FileInfo) ->
 
       it 'should have loaded=0', ->
         expect(subject.loaded).toEqual(0)
+
+      it 'should use .webkitRelativePath if there is one', ->
+        subject = FileInfo.fromFile
+          name: 'name'
+          lastModifiedDaet: new Date()
+          size: 10000
+          webkitRelativePath: 'foo/bar/name'
+
+        expect(subject.name).toEqual('foo/bar/name')

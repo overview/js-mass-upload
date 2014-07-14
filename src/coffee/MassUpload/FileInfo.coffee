@@ -12,7 +12,7 @@ define ->
 
   FileInfo.fromFile = (obj) ->
     new FileInfo(
-      obj.name,
+      obj.webkitRelativePath || obj.name,
       obj.lastModifiedDate,
       obj.size,
       0

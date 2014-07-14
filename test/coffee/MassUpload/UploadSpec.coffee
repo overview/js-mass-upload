@@ -4,10 +4,11 @@ define [ 'MassUpload/Upload' ], (Upload) ->
     date2 = new Date('Mon, 12 Aug 2013 11:02:54 -0400')
 
     describe 'starting with a File', ->
-      file = { size: 10000, name: 'file.txt', lastModifiedDate: date1 }
+      file = undefined
       subject = undefined
 
       beforeEach ->
+        file = { size: 10000, name: 'file.txt', lastModifiedDate: date1 }
         subject = new Upload({ file: file })
 
       it 'should have file, fileInfo, error, uploading and deleting attributes', ->
@@ -19,6 +20,11 @@ define [ 'MassUpload/Upload' ], (Upload) ->
 
       it 'should have an id of the filename', ->
         expect(subject.id).toEqual('file.txt')
+
+      it 'should have an id of the webkitRelativePath if there is one', ->
+        file.webkitRelativePath = 'foo/bar/file.txt'
+        subject = new Upload({ file: file })
+        expect(subject.id).toEqual('foo/bar/file.txt')
 
       it 'should have no fileInfo or error', ->
         expect(subject.get('fileInfo')).toBe(null)

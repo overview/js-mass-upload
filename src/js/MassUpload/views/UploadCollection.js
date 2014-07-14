@@ -57,7 +57,7 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
       'drop': '_onDrop'
     },
     template: _.template("<ul class=\"uploads\">\n  <%= collection.map(renderUpload).join('') %>\n</ul>\n<div class=\"upload-prompt\">\n  <button>\n    <h3>Select files to upload</h3>\n    <h4>Or drag and drop files here</h4>\n  </button>\n  <input type=\"file\" class=\"invisible-file-input\" multiple=\"multiple\" />\n</div>"),
-    uploadTemplate: _.template("<li class=\"<%= status %>\" data-cid=\"<%- upload.cid %>\">\n  <a href=\"#\" class=\"delete\">Delete</a>\n  <a href=\"#\" class=\"retry\">Retry</a>\n  <h3><%- upload.id %></h3>\n  <div class=\"status\">\n    <progress value=\"<%= progress.loaded %>\" max=\"<%= progress.total %>\"></progress>\n    <span class=\"text\"><%= humanReadableSize(progress.loaded) %> / <%= humanReadableSize(progress.total) %></span>\n    <span class=\"size\"><%= humanReadableSize(progress.total) %></span>\n    <span class=\"message\"><%- message %></span>\n  </div>\n</li>"),
+    uploadTemplate: _.template("<li class=\"<%= status %>\" data-id=\"<%- upload.id %>\">\n  <a href=\"#\" class=\"delete\">Delete</a>\n  <a href=\"#\" class=\"retry\">Retry</a>\n  <h3><%- upload.id %></h3>\n  <div class=\"status\">\n    <progress value=\"<%= progress.loaded %>\" max=\"<%= progress.total %>\"></progress>\n    <span class=\"text\"><%= humanReadableSize(progress.loaded) %> / <%= humanReadableSize(progress.total) %></span>\n    <span class=\"size\"><%= humanReadableSize(progress.total) %></span>\n    <span class=\"message\"><%- message %></span>\n  </div>\n</li>"),
     initialize: function() {
       if (this.collection == null) {
         throw 'Must specify collection, an UploadCollection';
@@ -84,7 +84,7 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
       var $li, html, index, laterElement, lis;
       html = this._renderUpload(upload);
       $li = Backbone.$(html);
-      this.els[upload.cid] = liToEls($li);
+      this.els[upload.id] = liToEls($li);
       lis = this.ul.childNodes;
       index = (options != null ? options.index : void 0) || lis.length;
       if (index >= lis.length) {
@@ -96,20 +96,20 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
       return void 0;
     },
     _onRemove: function(upload) {
-      var cid, els;
-      cid = upload.cid;
-      els = this.els[cid];
+      var els, id;
+      id = upload.id;
+      els = this.els[id];
       if (els == null) {
         throw 'Element does not exist';
       }
       this.ul.removeChild(els.li);
-      delete this.els[cid];
+      delete this.els[id];
       return void 0;
     },
     _onChange: function(upload) {
-      var cid, els, progress, statusAndMessage;
-      cid = upload.cid;
-      els = this.els[cid];
+      var els, id, progress, statusAndMessage;
+      id = upload.id;
+      els = this.els[id];
       if (els != null) {
         progress = upload.getProgress();
         statusAndMessage = uploadToStatusAndMessage(upload);
@@ -135,9 +135,9 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
       this.ul = this.$el.children('ul.uploads')[0];
       els = this.els = {};
       this.$el.find('ul.uploads>li').each(function(li) {
-        var cid;
-        cid = li.getAttribute('data-cid');
-        return els[cid] = liToEls(li);
+        var id;
+        id = li.getAttribute('data-id');
+        return els[id] = liToEls(li);
       });
       return this;
     },
@@ -153,9 +153,9 @@ define(['backbone', 'underscore', './humanReadableSize'], function(Backbone, _, 
       }
     },
     _eventToUpload: function(e) {
-      var cid;
-      cid = Backbone.$(e.target).closest('[data-cid]').attr('data-cid');
-      return this.collection.get(cid);
+      var id;
+      id = Backbone.$(e.target).closest('[data-id]').attr('data-id');
+      return this.collection.get(id);
     },
     _onRetry: function(e) {
       var upload;

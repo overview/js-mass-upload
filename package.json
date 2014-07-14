@@ -1,6 +1,6 @@
 {
   "name": "js-mass-upload",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Create upload UIs for thousands of files and gigabytes of data",
   "scripts": {},
   "repository": {

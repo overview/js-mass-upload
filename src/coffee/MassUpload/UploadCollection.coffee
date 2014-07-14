@@ -122,6 +122,9 @@ define [ 'backbone', './Upload' ], (Backbone, Upload) ->
     get: (id) ->
       @_idToModel[id] ? null
 
+    forFile: (file) -> @get(file.webkitRelativePath || file.name)
+    forFileInfo: (fileInfo) -> @get(fileInfo.name)
+
     # Adds some user-selected files to the collection.
     #
     # Files of the same name will be matched up to their server-side fileInfo

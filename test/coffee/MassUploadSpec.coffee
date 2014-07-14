@@ -31,6 +31,9 @@ define [ 'MassUpload', 'backbone' ], (MassUpload, Backbone) ->
   FakeUploads = Backbone.Collection.extend
     model: FakeUpload
 
+    forFile: (f) -> @get(f.name)
+    forFileInfo: (fi) -> @get(fi.name)
+
     next: -> @find((model) -> model.get('deleting') || (model.get('file')? && !model.get('error')?))
 
   describe 'MassUpload', ->

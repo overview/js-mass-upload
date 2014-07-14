@@ -121,6 +121,33 @@ define [ 'MassUpload/UploadCollection', 'underscore' ], (UploadCollection) ->
         expect(upload.attributes.file).toBe(file1)
         expect(upload.attributes.fileInfo).toBe(fileInfo1)
 
+    describe 'forFile', ->
+      it 'should search by webkitRelativePath if there is one', ->
+        file =
+          id: 'foo/bar.txt'
+          name: 'bar.txt'
+          webkitRelativePath: 'foo/bar.txt'
+          lastModifiedDate: date1
+          size: 10000
+
+        subject.addFiles([ file ])
+        expect(subject.forFile(file).file).toEqual(file)
+
+      it 'should search by name if there is no webkitRelativePath', ->
+        file =
+          id: 'bar.txt'
+          name: 'bar.txt'
+          lastModifiedDate: date1
+          size: 10000
+
+        subject.addFiles([ file ])
+        expect(subject.forFile(file).file).toEqual(file)
+
+    describe 'forFileInfo', ->
+      it 'should search by name', ->
+        subject.addFileInfos([ fileInfo1 ])
+        expect(subject.forFileInfo(fileInfo1).fileInfo).toEqual(fileInfo1)
+
     describe 'next', ->
       it 'should return null on empty collection', ->
         expect(subject.next()).toBe(null)

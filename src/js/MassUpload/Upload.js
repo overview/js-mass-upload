@@ -1,4 +1,4 @@
-define(['backbone', './FileInfo'], function(Backbone, FileInfo) {
+define(['underscore', 'backbone', './FileInfo'], function(_, Backbone, FileInfo) {
   var Upload;
   return Upload = (function() {
     Upload.prototype = Object.create(Backbone.Events);
@@ -12,13 +12,13 @@ define(['backbone', './FileInfo'], function(Backbone, FileInfo) {
     };
 
     function Upload(attributes) {
-      var _ref, _ref1, _ref2, _ref3;
+      var _ref, _ref1, _ref2;
       this.file = (_ref = attributes.file) != null ? _ref : null;
       this.fileInfo = (_ref1 = attributes.fileInfo) != null ? _ref1 : null;
       this.error = (_ref2 = attributes.error) != null ? _ref2 : null;
       this.uploading = attributes.uploading || false;
       this.deleting = attributes.deleting || false;
-      this.id = ((_ref3 = this.fileInfo) != null ? _ref3 : this.file).name;
+      this.id = this.file != null ? this.file.webkitRelativePath || this.file.name : this.fileInfo.name;
       this.attributes = this;
     }
 

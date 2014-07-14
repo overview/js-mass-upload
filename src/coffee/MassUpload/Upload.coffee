@@ -1,4 +1,4 @@
-define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
+define [ 'underscore', 'backbone', './FileInfo' ], (_, Backbone, FileInfo) ->
   # Represents an upload of a local file to the server.
   #
   # This can have several states:
@@ -42,7 +42,10 @@ define [ 'backbone', './FileInfo' ], (Backbone, FileInfo) ->
       @error = attributes.error ? null
       @uploading = attributes.uploading || false
       @deleting = attributes.deleting || false
-      @id = (@fileInfo ? @file).name
+      @id = if @file?
+        @file.webkitRelativePath || @file.name
+      else
+        @fileInfo.name
 
       # Backbone.Model compatibility
       @attributes = this

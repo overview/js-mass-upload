@@ -65,7 +65,7 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
     """)
 
     uploadTemplate: _.template("""
-      <li class="<%= status %>" data-cid="<%- upload.cid %>">
+      <li class="<%= status %>" data-id="<%- upload.id %>">
         <a href="#" class="delete">Delete</a>
         <a href="#" class="retry">Retry</a>
         <h3><%- upload.id %></h3>
@@ -102,7 +102,7 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
     _onAdd: (upload, collection, options) ->
       html = @_renderUpload(upload)
       $li = Backbone.$(html)
-      @els[upload.cid] = liToEls($li)
+      @els[upload.id] = liToEls($li)
 
       lis = @ul.childNodes
 
@@ -117,18 +117,18 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
       undefined
 
     _onRemove: (upload) ->
-      cid = upload.cid
-      els = @els[cid]
+      id = upload.id
+      els = @els[id]
       throw 'Element does not exist' if !els?
 
       @ul.removeChild(els.li)
-      delete @els[cid]
+      delete @els[id]
 
       undefined
 
     _onChange: (upload) ->
-      cid = upload.cid
-      els = @els[cid]
+      id = upload.id
+      els = @els[id]
 
       if els?
         progress = upload.getProgress()
@@ -150,10 +150,10 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
       @$el.html(html)
       @ul = @$el.children('ul.uploads')[0]
 
-      els = @els = {} # hash of cid to { li, progress, text, size, message }
+      els = @els = {} # hash of id to { li, progress, text, size, message }
       @$el.find('ul.uploads>li').each (li) ->
-        cid = li.getAttribute('data-cid')
-        els[cid] = liToEls(li)
+        id = li.getAttribute('data-id')
+        els[id] = liToEls(li)
 
       this
 
@@ -167,8 +167,8 @@ define [ 'backbone', 'underscore', './humanReadableSize' ], (Backbone, _, humanR
         @trigger('add-files', files)
 
     _eventToUpload: (e) ->
-      cid = Backbone.$(e.target).closest('[data-cid]').attr('data-cid')
-      @collection.get(cid)
+      id = Backbone.$(e.target).closest('[data-id]').attr('data-id')
+      @collection.get(id)
 
     _onRetry: (e) ->
       e.preventDefault()

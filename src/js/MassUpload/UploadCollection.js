@@ -135,6 +135,14 @@ define(['backbone', './Upload'], function(Backbone, Upload) {
       return (_ref = this._idToModel[id]) != null ? _ref : null;
     };
 
+    UploadCollection.prototype.forFile = function(file) {
+      return this.get(file.webkitRelativePath || file.name);
+    };
+
+    UploadCollection.prototype.forFileInfo = function(fileInfo) {
+      return this.get(fileInfo.name);
+    };
+
     UploadCollection.prototype.addFiles = function(files) {
       var file, uploads;
       uploads = (function() {

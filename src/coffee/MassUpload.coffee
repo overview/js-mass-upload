@@ -228,26 +228,26 @@ define [
       @_tick()
 
     _onUploaderStart: (file) ->
-      upload = @uploads.get(file.name)
+      upload = @uploads.forFile(file)
       upload.set
         uploading: true
         error: null
 
     _onUploaderStop: (file) ->
-      upload = @uploads.get(file.name)
+      upload = @uploads.forFile(file)
       upload.set(uploading: false)
       @_tick()
 
     _onUploaderProgress: (file, progressEvent) ->
-      upload = @uploads.get(file.name)
+      upload = @uploads.forFile(file)
       upload.updateWithProgress(progressEvent)
 
     _onUploaderError: (file, errorDetail) ->
-      upload = @uploads.get(file.name)
+      upload = @uploads.forFile(file)
       upload.set(error: errorDetail)
 
     _onUploaderSuccess: (file) ->
-      upload = @uploads.get(file.name)
+      upload = @uploads.forFile(file)
       upload.updateWithProgress({ loaded: upload.size(), total: upload.size() })
       # onUploaderDone sets uploading=false
 
@@ -255,11 +255,11 @@ define [
       @set(status: 'uploading')
 
     _onDeleterSuccess: (fileInfo) ->
-      upload = @uploads.get(fileInfo.name)
+      upload = @uploads.forFileInfo(fileInfo)
       @uploads.remove(upload)
 
     _onDeleterError: (fileInfo, errorDetail) ->
-      upload = @uploads.get(fileInfo.name)
+      upload = @uploads.forFileInfo(fileInfo)
       upload.set(error: errorDetail)
 
     _onDeleterStop: (fileInfo) ->
