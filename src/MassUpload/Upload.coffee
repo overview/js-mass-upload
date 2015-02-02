@@ -111,5 +111,5 @@ module.exports = class Upload
     @fileInfo? && @file? && (
       @fileInfo.name != @id ||
       @fileInfo.total != @size() ||
-      @fileInfo.lastModifiedDate?.getTime?() != @lastModifiedDate().getTime?()
+      @fileInfo.lastModifiedDate?.getTime?() != @lastModifiedDate()?.getTime?()
     )
