@@ -1,6 +1,4 @@
-bower_components/
 node_modules/
 demo/js
 demo/css
-test/js
 .DS_Store

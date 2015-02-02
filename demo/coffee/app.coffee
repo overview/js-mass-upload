@@ -1,14 +1,21 @@
-define [ 'jquery', 'mass-upload', 'upload-logic', 'MassUpload/views/MassUpload' ], ($, MassUpload, uploadLogic, MassUploadView) ->
-  options = $.extend({
-  }, uploadLogic)
+$ = require('jquery')
+Backbone = require('backbone')
 
-  massUpload = new MassUpload(options)
+Backbone.$ = $
 
-  new MassUploadView(model: massUpload, el: $('.mass-upload'))
+MassUpload = require('../../js-mass-upload')
+uploadLogic = require('./upload-logic')
+MassUploadView = require('../../src/MassUpload/views/MassUpload')
 
-  $networkIsWorking = $('#network-is-working')
-  $networkIsWorking.change ->
-    value = $networkIsWorking.prop('checked')
-    uploadLogic.toggleWorking(value)
+options = $.extend({}, uploadLogic)
 
-  massUpload.fetchFileInfosFromServer()
+massUpload = new MassUpload(options)
+
+new MassUploadView(model: massUpload, el: $('.mass-upload'))
+
+$networkIsWorking = $('#network-is-working')
+$networkIsWorking.change ->
+  value = $networkIsWorking.prop('checked')
+  uploadLogic.toggleWorking(value)
+
+massUpload.fetchFileInfosFromServer()

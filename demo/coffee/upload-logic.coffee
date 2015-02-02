@@ -1,47 +1,47 @@
-define ->
-  date1 = new Date('Mon, 13 Aug 2013 09:29:16 -0400')
-  date2 = new Date('Mon, 14 Aug 2013 09:29:16 -0400')
-  date3 = new Date('Mon, 15 Aug 2013 09:29:16 -0400')
-  serverFiles = [
-    { name: 'file1.txt', loaded: 2000, total: 10000, lastModifiedDate: date1 }
-    { name: 'file2.txt', loaded: 3000, total: 20000, lastModifiedDate: date2 }
-    { name: 'file3.txt', loaded: 4000, total: 30000, lastModifiedDate: date3 }
-  ]
+date1 = new Date('Mon, 13 Aug 2013 09:29:16 -0400')
+date2 = new Date('Mon, 14 Aug 2013 09:29:16 -0400')
+date3 = new Date('Mon, 15 Aug 2013 09:29:16 -0400')
+serverFiles = [
+  { name: 'file1.txt', loaded: 2000, total: 10000, lastModifiedDate: date1 }
+  { name: 'file2.txt', loaded: 3000, total: 20000, lastModifiedDate: date2 }
+  { name: 'file3.txt', loaded: 4000, total: 30000, lastModifiedDate: date3 }
+]
 
-  networkIsWorking = true # when false, all ticks fail
+networkIsWorking = true # when false, all ticks fail
 
-  sendAsyncError = (error, message) ->
-    window.setTimeout((-> error(message)), 50)
+sendAsyncError = (error, message) ->
+  window.setTimeout((-> error(message)), 50)
 
-  tickListFilesAtBytes = (bytes, progress, success, error) ->
-    if !networkIsWorking
-      sendAsyncError(error, 'network is broken')
+tickListFilesAtBytes = (bytes, progress, success, error) ->
+  if !networkIsWorking
+    sendAsyncError(error, 'network is broken')
+  else
+    total = 1000
+    increment = 100
+    timeout = 100
+
+    if bytes >= total
+      progress({ loaded: total, total: total })
+      success(serverFiles)
     else
-      total = 1000
-      increment = 100
-      timeout = 100
+      progress({ loaded: bytes, total: total })
+      window.setTimeout((-> tickListFilesAtBytes(bytes + increment, progress, success, error)), timeout)
 
-      if bytes >= total
-        progress({ loaded: total, total: total })
-        success(serverFiles)
-      else
-        progress({ loaded: bytes, total: total })
-        window.setTimeout((-> tickListFilesAtBytes(bytes + increment, progress, success, error)), timeout)
+tickUploadFileAtByte = (file, bytes, progress, success, error) ->
+  if !networkIsWorking
+    sendAsyncError(error, 'network is broken')
+  else
+    increment = 50000
+    timeout = 500
 
-  tickUploadFileAtByte = (file, bytes, progress, success, error) ->
-    if !networkIsWorking
-      sendAsyncError(error, 'network is broken')
+    if bytes >= file.size
+      progress({ loaded: file.size, total: file.size })
+      success()
     else
-      increment = 50000
-      timeout = 500
+      progress({ loaded: bytes, total: file.size })
+      window.setTimeout((-> tickUploadFileAtByte(file, bytes + increment, progress, success, error)), timeout)
 
-      if bytes >= file.size
-        progress({ loaded: file.size, total: file.size })
-        success()
-      else
-        progress({ loaded: bytes, total: file.size })
-        window.setTimeout((-> tickUploadFileAtByte(file, bytes + increment, progress, success, error)), timeout)
-
+module.exports =
   # Returns three dummy files, taking about a second
   doListFiles: (progress, success, error) -> tickListFilesAtBytes(0, progress, success, error)
 

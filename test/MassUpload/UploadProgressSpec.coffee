@@ -1,0 +1,102 @@
+Backbone = require('backbone')
+UploadProgress = require('../../src/MassUpload/UploadProgress')
+
+Upload = Backbone.Model.extend
+  defaults:
+    loaded: 0
+    total: 0
+
+  initialize: ->
+    @id = @cid
+
+  getProgress: -> { loaded: @get('loaded'), total: @get('total') }
+
+buildUpload = (loaded, total) ->
+  new Upload({ loaded: loaded, total: total })
+
+describe 'MassUpload/UploadProgress', ->
+  collection = undefined
+  subject = undefined
+
+  beforeEach ->
+    collection = new Backbone.Collection()
+    subject = new UploadProgress({ uploadCollection: collection })
+
+  afterEach ->
+    subject?.stopListening()
+
+  it 'should start with 0/0', ->
+    expect(subject.get('loaded')).to.eq(0)
+    expect(subject.get('total')).to.eq(0)
+
+  it 'should start with not 0/0 if there are uploads already', ->
+    collection = new Backbone.Collection([ buildUpload(10, 20) ])
+    subject.stopListening()
+    subject = new UploadProgress({ uploadCollection: collection })
+    expect(subject.get('loaded')).to.eq(10)
+    expect(subject.get('total')).to.eq(20)
+
+  it 'should add to total when an upload is added', ->
+    collection.add(buildUpload(10, 20))
+    expect(subject.get('total')).to.eq(20)
+
+  it 'should add to loaded when an upload is added', ->
+    collection.add(buildUpload(10, 20))
+    expect(subject.get('loaded')).to.eq(10)
+
+  it 'should ignore a set that happens before add is complete (race condition)', ->
+    collection = new Backbone.Collection()
+    collection.on('add', (model) -> model.set('foo', 'bar'))
+    subject.stopListening()
+    subject = new UploadProgress({ uploadCollection: collection })
+    collection.add(buildUpload(10, 20))
+    expect(subject.pick('loaded', 'total')).to.deep.eq({ loaded: 10, total: 20 })
+
+  describe 'starting with some uploads', ->
+    beforeEach ->
+      collection.add([
+        buildUpload(10, 20)
+        buildUpload(20, 40)
+        buildUpload(40, 80)
+      ])
+
+    it 'should add correctly', ->
+      # This just tests the test suite...
+      expect(subject.get('loaded')).to.eq(70)
+      expect(subject.get('total')).to.eq(140)
+
+    it 'should subtract from loaded when an upload is removed', ->
+      collection.remove(collection.at(1))
+      expect(subject.get('loaded')).to.eq(50)
+
+    it 'should subtract from total when an upload is removed', ->
+      collection.remove(collection.at(1))
+      expect(subject.get('total')).to.eq(100)
+
+    it 'should stop listening to changes in inBatch', ->
+      subject.inBatch ->
+        collection.at(1).set({ loaded: 25 })
+        expect(subject.get('loaded')).to.eq(70)
+
+    it 'should catch up after changes in inBatch', ->
+      subject.inBatch ->
+        collection.at(1).set({ loaded: 25 })
+      expect(subject.get('loaded')).to.eq(75)
+
+    it 'should listen after inBatch()', ->
+      subject.inBatch(->)
+      collection.at(1).set({ loaded: 25 })
+      expect(subject.get('loaded')).to.eq(75)
+
+    it 'should change loaded when an upload changes', ->
+      collection.at(1).set({ loaded: 25 })
+      expect(subject.get('loaded')).to.eq(75)
+
+    it 'should change total when an upload changes', ->
+      collection.at(1).set({ total: 25 })
+      expect(subject.get('total')).to.eq(125)
+
+    it 'should change loaded and total on reset', ->
+      collection.reset([ buildUpload(20, 30) ])
+      expect(subject.get('loaded')).to.eq(20)
+      expect(subject.get('total')).to.eq(30)

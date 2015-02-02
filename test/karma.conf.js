@@ -1,20 +1,23 @@
 module.exports = function(config) {
   config.set({
-    autoWatch: false,
+    autoWatch: true,
     basePath: '..',
     browsers: [ 'PhantomJS' ],
-    frameworks: [ 'jasmine', 'requirejs' ],
-    reporters: [ 'dots', 'growl' ],
-
+    frameworks: [ 'browserify', 'mocha' ],
+    reporters: [ 'dots' ],
+    browserify: {
+      watch: true,
+      transform: [ 'coffeeify' ],
+      extensions: [ '.js', '.coffee' ]
+    },
+    preprocessors: {
+      '**/*.coffee': [ 'browserify' ],
+      'src/**/*.js': [ 'browserify' ],
+      'test/**/*.js': [ 'browserify' ]
+    },
     files: [
-      {pattern: 'src/**/*.js', included: false},
-	  {pattern: 'test/**/*Spec.js', included: false},
-	  {pattern: 'bower_components/**/*.js', included: false},
-      'test/test-main.js',
+      'test/init.coffee',
+      { pattern: 'test/**/*Spec.coffee' }
     ],
-
-    exclude: [
-      'src/js/index.js'
-    ]
   });
 };

@@ -19,6 +19,12 @@ First, include the library. (It depends on [Backbone](http://backbonejs.org).) Y
 require([ 'path/to/mass-upload' ], function(MassUpload) { ... });
 ```
 
+Or you can use [Browserify](http://browserify.org/) or plain Node `require`:
+
+```javascript
+var MassUpload = require('js-mass-upload');
+```
+
 Or, you can go the old-fashioned route in your HTML:
 
 ```html
@@ -232,13 +238,10 @@ To build and contribute:
 1. Install [NodeJS](http://nodejs.org/)
 2. Clone this repository: `git clone https://github.com/overview/js-mass-upload.git`
 3. `npm install` in this directory
-4. `bower install` in this directory
-5. `grunt develop` to start developing.
-6. Write tests in `test/coffee`. In the terminal that's running `grunt develop`, you'll see new failures.
-7. Once you've created a test failure, edit code in `src/coffee`, until the terminal that's running `grunt develop` comes up green.
-8. Browse to http://localhost:8080/demo/ to see your code in action.
-9. Run `grunt` to populate the `dist/` directory.
-10. commit and create a pull request.
+4. `gulp` to build
+5. `gulp test` to unit-test
+6. Add a test; return to step 4; make test pass; return to step 4
+7. git commit and create a pull request
 
 License
 -------
