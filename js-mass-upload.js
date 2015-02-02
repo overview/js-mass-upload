@@ -3806,7 +3806,8 @@ module.exports = Upload = (function() {
   };
 
   Upload.prototype.hasConflict = function() {
-    return (this.fileInfo != null) && (this.file != null) && (this.fileInfo.name !== this.id || this.fileInfo.total !== this.size() || this.fileInfo.lastModifiedDate.getTime() !== this.lastModifiedDate().getTime());
+    var _base, _ref;
+    return (this.fileInfo != null) && (this.file != null) && (this.fileInfo.name !== this.id || this.fileInfo.total !== this.size() || ((_ref = this.fileInfo.lastModifiedDate) != null ? typeof _ref.getTime === "function" ? _ref.getTime() : void 0 : void 0) !== (typeof (_base = this.lastModifiedDate()).getTime === "function" ? _base.getTime() : void 0));
   };
 
   return Upload;
