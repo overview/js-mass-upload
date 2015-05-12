@@ -46,7 +46,7 @@ UploadProgress = require('./MassUpload/UploadProgress')
 #                                      # files
 #
 #     massUpload.get('uploadErrors') # Array of { upload: upload,
-#                                    # errorDetail: errorDetail } objects.
+#                                    # error: error } objects.
 #                                    # Generally, errors should be rendered
 #                                    # alongside their uploads so this array
 #                                    # is redundant; but it's useful if you
@@ -98,26 +98,30 @@ module.exports = class MassUpload extends Backbone.Model
     options = @_options
     @lister = options?.lister ? new FileLister(options.doListFiles)
     @lister.callbacks =
-      onStart: => @_onListerStart()
-      onProgress: (progressEvent) => @_onListerProgress(progressEvent)
-      onSuccess: (fileInfos) => @_onListerSuccess(fileInfos)
-      onError: (errorDetail) => @_onListerError(errorDetail)
-      onStop: => @_onListerStop()
+      onStart: => @set(status: 'listing-files', listFilesError: null)
+      onProgress: (progressEvent) => @set(listFilesProgress: progressEvent)
+      onSuccess: (fileInfos) =>
+        @uploads.addFileInfos(fileInfos)
+        @_tick()
+      onError: (error) => @set(listFilesError: error, status: 'listing-files-error')
+      onStop: => # nothing: @_tick() on success, stall on error
 
     @uploader = options?.uploader ? new FileUploader(options.doUploadFile)
     @uploader.callbacks =
-      onStart: (file) => @_onUploaderStart(file)
-      onStop: (file) => @_onUploaderStop(file)
-      onSuccess: (file) => @_onUploaderSuccess(file)
-      onError: (file, errorDetail) => @_onUploaderError(file, errorDetail)
-      onProgress: (file, progressEvent) => @_onUploaderProgress(file, progressEvent)
+      onStart: (upload) => upload.set(uploading: true, error: null)
+      onStop: (upload) =>
+        upload.set(uploading: false)
+        @_tick()
+      onSuccess: (upload) => upload.updateWithProgress(loaded: upload.size(), total: upload.size())
+      onError: (upload, error) => upload.set(error: error)
+      onProgress: (upload, progressEvent) => upload.updateWithProgress(progressEvent)
 
     @deleter = options?.deleter ? new FileDeleter(options.doDeleteFile)
     @deleter.callbacks =
-      onStart: (fileInfo) => @_onDeleterStart(fileInfo)
-      onSuccess: (fileInfo) => @_onDeleterSuccess(fileInfo)
-      onError: (fileInfo, errorDetail) => @_onDeleterError(fileInfo, errorDetail)
-      onStop: (fileInfo) => @_onDeleterStop(fileInfo)
+      onStart: (upload) => @set(status: 'uploading')
+      onSuccess: (upload) => @uploads.remove(upload)
+      onError: (upload, error) => upload.set(error: error)
+      onStop: (upload) => @_tick()
 
   fetchFileInfosFromServer: ->
     @lister.run()
@@ -147,26 +151,6 @@ module.exports = class MassUpload extends Backbone.Model
       @removeUpload(upload)
     @uploads.reset()
     @prepare()
-
-  _onListerStart: ->
-    @set
-      status: 'listing-files'
-      listFilesError: null
-
-  _onListerProgress: (progressEvent) ->
-    @set(listFilesProgress: progressEvent)
-
-  _onListerSuccess: (fileInfos) ->
-    @uploads.addFileInfos(fileInfos)
-    @_tick()
-
-  _onListerError: (errorDetail) ->
-    @set
-      listFilesError: errorDetail
-      status: 'listing-files-error'
-
-  _onListerStop: ->
-    # nothing: @_tick() on success, stall on error
 
   _mergeUploadError: (upload, prevError, curError) ->
     # Update the uploadErrors attribute
@@ -217,44 +201,6 @@ module.exports = class MassUpload extends Backbone.Model
 
     @_tick()
 
-  _onUploaderStart: (file) ->
-    upload = @uploads.forFile(file)
-    upload.set
-      uploading: true
-      error: null
-
-  _onUploaderStop: (file) ->
-    upload = @uploads.forFile(file)
-    upload.set(uploading: false)
-    @_tick()
-
-  _onUploaderProgress: (file, progressEvent) ->
-    upload = @uploads.forFile(file)
-    upload.updateWithProgress(progressEvent)
-
-  _onUploaderError: (file, errorDetail) ->
-    upload = @uploads.forFile(file)
-    upload.set(error: errorDetail)
-
-  _onUploaderSuccess: (file) ->
-    upload = @uploads.forFile(file)
-    upload.updateWithProgress({ loaded: upload.size(), total: upload.size() })
-    # onUploaderDone sets uploading=false
-
-  _onDeleterStart: (fileInfo) ->
-    @set(status: 'uploading')
-
-  _onDeleterSuccess: (fileInfo) ->
-    upload = @uploads.forFileInfo(fileInfo)
-    @uploads.remove(upload)
-
-  _onDeleterError: (fileInfo, errorDetail) ->
-    upload = @uploads.forFileInfo(fileInfo)
-    upload.set(error: errorDetail)
-
-  _onDeleterStop: (fileInfo) ->
-    @_tick()
-
   # Looks for a task
   _tick: ->
     upload = @uploads.next()
@@ -262,9 +208,9 @@ module.exports = class MassUpload extends Backbone.Model
 
     if upload?
       if upload.get('deleting')
-        @deleter.run(upload.get('fileInfo'))
+        @deleter.run(upload)
       else
-        @uploader.run(upload.get('file'))
+        @uploader.run(upload)
 
     status = if @get('uploadErrors').length
       'uploading-error'

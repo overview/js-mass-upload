@@ -9,19 +9,19 @@ FileInfo = require('./FileInfo')
 #       onStop: (file) -> ...
 #       onProgress: (file) -> ...
 #       onSuccess: (file) -> ...
-#       onError: (file, errorDetail) -> ...
+#       onError: (file, error) -> ...
 #     })
 #
-#     fileUploader.run(file)
+#     fileUploader.run(upload)
 #
 # When run, FileUploader:
 #
 # 1. Calls onStart().
-# 2. Calls doUpload() with that File.
+# 2. Calls doUpload() with the Upload.
 # 3. Calls onProgress() during upload, with { loaded: n, total: n }.
 #    contain progress) when doUpload() calls its progress callback.
-# 4. Calls onSuccess() or onError() with the File, followed by
-#    onStop() with the File.
+# 4. Calls onSuccess() or onError() with the Upload, followed by
+#    onStop() with the Upload.
 #
 # Only one file can be uploaded at a time.
 #
@@ -42,43 +42,42 @@ FileInfo = require('./FileInfo')
 # race condition abort() may cause success, not error.
 module.exports = class FileUploader
   constructor: (@doUpload, @callbacks) ->
-    @_file = null
+    @_upload = null
     @_abortCallback = null
     @_aborting = false
 
-  run: (file) ->
-    throw 'already running' if @_file?
+  run: (upload) ->
+    throw 'already running' if @_upload?
 
-    @_file = file
+    @_upload = upload
 
-    @callbacks.onStart?(@_file)
+    @callbacks.onStart?(upload)
 
     @_abortCallback = @doUpload(
-      file,
-      ((progressEvent) => @_onProgress(file, progressEvent)),
-      (() => @_onSuccess(file)),
-      ((errorDetail) => @_onError(file, errorDetail))
+      upload,
+      ((progressEvent) => @_onProgress(upload, progressEvent)),
+      ((error) => if error then @_onError(upload, error) else @_onSuccess(upload))
     )
 
   abort: ->
-    if @_file && !@_aborting
+    if @_upload && !@_aborting
       @_aborting = true
       if typeof @_abortCallback == 'function'
         @_abortCallback()
 
-  _onProgress: (file, progressEvent) ->
-    @callbacks.onProgress?(file, progressEvent)
+  _onProgress: (upload, progressEvent) ->
+    @callbacks.onProgress?(upload, progressEvent)
 
-  _onSuccess: (file) ->
-    @callbacks.onSuccess?(file)
-    @_onStop(file)
+  _onSuccess: (upload) ->
+    @callbacks.onSuccess?(upload)
+    @_onStop(upload)
 
-  _onError: (file, errorDetail) ->
-    @callbacks.onError?(file, errorDetail)
-    @_onStop(file)
+  _onError: (upload, error) ->
+    @callbacks.onError?(upload, error)
+    @_onStop(upload)
 
-  _onStop: (file) ->
-    @_file = null
+  _onStop: (upload) ->
+    @_upload = null
     @_abortCallback = null
     @_aborting = false
-    @callbacks.onStop?(file)
+    @callbacks.onStop?(upload)

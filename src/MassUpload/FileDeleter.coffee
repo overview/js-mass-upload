@@ -3,12 +3,12 @@
 # Usage:
 #
 #   fileDeleter = new FileDeleter(doDeleteFile, {
-#     onStart: (fileInfo) ->
-#     onSuccess: (fileInfo) ->
-#     onError: (fileInfo, detail) ->
-#     onStop: (fileInfo) ->
+#     onStart: (upload) ->
+#     onSuccess: (upload) ->
+#     onError: (upload, error) ->
+#     onStop: (upload) ->
 #   })
-#   fileDeleter.run(fileInfo)
+#   fileDeleter.run(upload)
 #
 # FileDeleter calls doDeleteFile().
 #
@@ -27,27 +27,26 @@ module.exports = class FileDeleter
   constructor: (@doDeleteFile, @callbacks = {}) ->
     @running = false
 
-  run: (fileInfo) ->
+  run: (upload) ->
     throw 'already running' if @running
     @running = true
 
-    @callbacks.onStart?(fileInfo)
+    @callbacks.onStart?(upload)
 
     @doDeleteFile(
-      fileInfo,
-      (=> @_onSuccess(fileInfo))
-      ((errorDetail) => @_onError(fileInfo, errorDetail))
+      upload,
+      ((error) => if error then @_onError(upload, error) else @_onSuccess(upload))
     )
 
-  _onSuccess: (fileInfo) ->
-    @callbacks.onSuccess?(fileInfo)
-    @_onStop(fileInfo)
+  _onSuccess: (upload) ->
+    @callbacks.onSuccess?(upload)
+    @_onStop(upload)
 
-  _onError: (fileInfo, errorDetail) ->
-    @callbacks.onError?(fileInfo, errorDetail)
-    @_onStop(fileInfo)
+  _onError: (upload, error) ->
+    @callbacks.onError?(upload, error)
+    @_onStop(upload)
 
-  _onStop: (fileInfo) ->
+  _onStop: (upload) ->
     @running = false
-    @callbacks.onStop?(fileInfo)
+    @callbacks.onStop?(upload)
     undefined

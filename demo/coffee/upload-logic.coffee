@@ -9,12 +9,12 @@ serverFiles = [
 
 networkIsWorking = true # when false, all ticks fail
 
-sendAsyncError = (error, message) ->
-  window.setTimeout((-> error(message)), 50)
+sendAsyncError = (callback, message) ->
+  window.setTimeout((-> callback(new Error(message))), 50)
 
-tickListFilesAtBytes = (bytes, progress, success, error) ->
+tickListFilesAtBytes = (bytes, progress, done) ->
   if !networkIsWorking
-    sendAsyncError(error, 'network is broken')
+    sendAsyncError(done, 'network is broken')
   else
     total = 1000
     increment = 100
@@ -22,42 +22,42 @@ tickListFilesAtBytes = (bytes, progress, success, error) ->
 
     if bytes >= total
       progress({ loaded: total, total: total })
-      success(serverFiles)
+      done(null, serverFiles)
     else
       progress({ loaded: bytes, total: total })
-      window.setTimeout((-> tickListFilesAtBytes(bytes + increment, progress, success, error)), timeout)
+      window.setTimeout((-> tickListFilesAtBytes(bytes + increment, progress, done)), timeout)
 
-tickUploadFileAtByte = (file, bytes, progress, success, error) ->
+tickUploadFileAtByte = (file, bytes, progress, done) ->
   if !networkIsWorking
-    sendAsyncError(error, 'network is broken')
+    sendAsyncError(done, 'network is broken')
   else
     increment = 50000
     timeout = 500
 
     if bytes >= file.size
       progress({ loaded: file.size, total: file.size })
-      success()
+      done()
     else
       progress({ loaded: bytes, total: file.size })
-      window.setTimeout((-> tickUploadFileAtByte(file, bytes + increment, progress, success, error)), timeout)
+      window.setTimeout((-> tickUploadFileAtByte(file, bytes + increment, progress, done)), timeout)
 
 module.exports =
   # Returns three dummy files, taking about a second
-  doListFiles: (progress, success, error) -> tickListFilesAtBytes(0, progress, success, error)
+  doListFiles: (progress, done) -> tickListFilesAtBytes(0, progress, done)
 
   # "Uploads" the file at 100kb/s (really, does nothing but call success)
-  doUploadFile: (file, progress, success, error) -> tickUploadFileAtByte(file, 0, progress, success, error)
+  doUploadFile: (upload, progress, done) -> tickUploadFileAtByte(upload.get('file'), 0, progress, done)
 
   # "Deletes" the file after 1s (really, does nothing but call success)
-  doDeleteFile: (fileInfo, success, error) ->
+  doDeleteFile: (upload, done) ->
     window.setTimeout(->
       if networkIsWorking
-        success()
+        done()
       else
-        error('network is broken')
+        done(new Error('network is broken'))
     , 1000)
 
   # Specifies to overwrite
-  onUploadConflictingFile: (file, conflictingFileInfo, deleteFromServer, skip) -> deleteFromServer()
+  onUploadConflictingFile: (upload, conflictingFileInfo, deleteFromServer, skip) -> deleteFromServer()
 
   toggleWorking: (working) -> networkIsWorking = working

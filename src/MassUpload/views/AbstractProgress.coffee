@@ -49,6 +49,8 @@ module.exports = class AbstractProgress extends Backbone.View
     progress = @getProgress()
     error = @getError()
 
+    console.log(progress, error)
+
     html = @template
       error: error
       preamble: @preamble

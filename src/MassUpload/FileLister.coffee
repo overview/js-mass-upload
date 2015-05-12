@@ -34,16 +34,15 @@ module.exports = class FileLister
 
     @doListFiles(
       ((progressEvent) => @callbacks.onProgress?(progressEvent)),
-      ((fileInfos) => @_onSuccess(fileInfos)),
-      ((errorDetail) => @_onError(errorDetail))
+      ((error, fileInfos) => if error? then @_onError(error) else @_onSuccess(fileInfos))
     )
 
   _onSuccess: (fileInfos) ->
     @callbacks.onSuccess?(fileInfos)
     @_onStop()
 
-  _onError: (errorDetail) ->
-    @callbacks.onError(errorDetail)
+  _onError: (error) ->
+    @callbacks.onError(error)
     @_onStop()
 
   _onStop: ->

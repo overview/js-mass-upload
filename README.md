@@ -37,10 +37,9 @@ Now you'll need to implement a few asynchronous functions. The return values are
 
 ```javascript
 var app = new MassUpload({
-  doListFiles: function(progress, success, error) { ... },
-  doUploadFile: function(file, progress, success, error) { ... },
-  doDeleteFile: function(fileInfo, success, error) { ... },
-  onUploadConflictingFile: function(file, conflictingFileInfo, deleteFromServer, skip) { ... }
+  doListFiles: function(progress, done) { ... },
+  doUploadFile: function(upload, progress, done) { ... },
+  doDeleteFile: function(upload, done) { ... },
 });
 
 app.on('change:status', function() { ... });
@@ -105,78 +104,55 @@ Got that? Great. Here's what you need to implement:
 ---
 
 ```javascript
-function doListFiles(progress, success, error) { ... }
+function doListFiles(progress, done) { ... }
 ```
 
 Lists files already uploaded to the server. Called when initializing.
 
 * Calls `progress(progressEvent)`, where `progressEvent` is a `ProgressEvent`, during loading.
-* Calls `success(data)`, where `data` is an `Array` of `FileInfo` objects, when loading is complete.
-* Calls `error(detail)`, where `detail` contains the error's details (perhaps it's an `XMLHttpRequest`), if listing fails.
+* Calls `done(null, data)`, where `data` is an `Array` of `FileInfo` objects, when loading is complete.
+* Calls `done(error)`, where `error` is an `Error` (perhaps with a `.xhr` property), if listing fails.
 
 **Parameters**:
 
 * `progress`: To be called during loading.
-* `success`: To be called on success.
-* `error`: To be called on error.
+* `done`: To be called on error or after completion.
 
 ---
 
 ```javascript
-function doUploadFile(file, progress, success, error) { ... }
+function doUploadFile(upload, progress, done) { ... }
 ```
 
 Uploads a file to the server. Called asynchronously.
 
 * Calls `progress(progressEvent)`, where `progressEvent` is a `ProgressEvent`, during loading.
-* Calls `success()` when upload is complete.
-* Calls `error(detail)`, where `detail` contains the error's details (perhaps it's an `XMLHttpRequest`), if the upload fails.
+* Calls `done(null)` when upload is complete.
+* Calls `done(error)`, where `error` is an `Error` (perhaps with a `.xhr` property), if listing fails.
 
 **Parameters**:
 
-* `file`: A user-selected `File` which may or may not be partially uploaded to the server already.
+* `upload`: An `Upload`. Call `upload.get('file')` to get its `File`. The `File` may already be partially uploaded to the server.
 * `progress`: To be called during upload.
-* `success`: To be called on success.
-* `error`: To be called on error.
+* `done`: To be called on error or after completion.
 
-**Returns**: a function that, when called, aborts the operation as soon as possible. (This function should asynchronously call `error('aborted')`.)
+**Returns**: a function that, when called, aborts the operation as soon as possible. (The `abort` function should asynchronously call `done(new Error('aborted'))`.)
 
 ---
 
 ```javascript
-function doDeleteFile(fileInfo, success, error) { ... }
+function doDeleteFile(upload, success, error) { ... }
 ```
 
 Deletes a file from the server. Called asynchronously.
 
-* Calls `success()` when delete has succeeded.
-* Calls `error(detail)`, where `detail` contains the error's details (perhaps it's an `XMLHttpRequest`), if the delete fails.
+* Calls `done(null)` when the delete is complete.
+* Calls `done(error)`, where `error` is an `Error` (perhaps with a `.xhr` property), if deleting fails.
 
 **Parameters**:
 
-* `fileInfo`: a `FileInfo` object representing a file on the server.
-* `success`: To be called on success.
-* `error`: To be called on error.
-
----
-
-```javascript
-function onUploadConflictingFile(file, conflictingFileInfo, deleteFromServer, skip) { ... }
-```
-
-Determines what to do (asynchronously) when uploading a conflicting file.
-
-* Calls `deleteFromServer()` if the file should be deleted from the server.
-* Calls `skip()` if the file should not be uploaded at all.
-
-A file conflicts if it has the same name as an existing file but a different size and/or modification date. While there is no technical reason to prevent uploading `file` alongside `conflictingFileInfo` such that they're both on the server, that almost certainly isn't what the user wants.
-
- You may implement this as a prompt, for instance, or you can just code something simple like `deleteFromServer()`.
-
-**Parameters**:
-
-* `deleteFromServer`: To be called to indicate the user wants to delete this file from the server.
-* `skip`: To be called to indicate the user wants to leave the file alone on the server and not upload the selected file.
+* `upload`: An `Upload`. Call `upload.get('fileInfo')` to get its `FileInfo` object.
+* `done`: To be called on error or after completion.
 
 ---
 
@@ -226,9 +202,9 @@ Then our client-side API methods should do something like this:
 
 | Function | Behavior |
 | -------- | -------- |
-| `doListFiles(progress, success, error)` | Mirrors `GET /folders/:permalink/files` |
-| `doUploadFile(file, progress, success, error)` | Determines `guid`; calls `HEAD /folders/:permalink/files/:guid`, optionally calls `PUT /folders/:permalink/files/:guid` if the file does not exist; calculates the missing `Content-Range` and calls `file.slice()` to create a [`Blob`](http://www.w3.org/TR/FileAPI/#dfn-Blob) starting at that range; calls `PATCH /folders/:permalink/files/:guid` sending the `Blob`. (In `jQuery.ajax()`, you can send a blob using `processData: false`.) |
-| `doDeleteFile(fileInfo, success, error)` | Determines `guid`; calls `DELETE /folders/:permalink/files/:guid`; calls success if the server responds with success or `404`, otherwise calls error. |
+| `doListFiles(progress, done)` | Mirrors `GET /folders/:permalink/files` |
+| `doUploadFile(file, progress, done)` | Determines `guid`; calls `HEAD /folders/:permalink/files/:guid`, optionally calls `PUT /folders/:permalink/files/:guid` if the file does not exist; calculates the missing `Content-Range` and calls `file.slice()` to create a [`Blob`](http://www.w3.org/TR/FileAPI/#dfn-Blob) starting at that range; calls `PATCH /folders/:permalink/files/:guid` sending the `Blob`. (In `jQuery.ajax()`, you can send a blob using `processData: false`.) |
+| `doDeleteFile(fileInfo, done)` | Determines `guid`; calls `DELETE /folders/:permalink/files/:guid`; calls success if the server responds with success or `404`, otherwise calls error. |
 
 Contributing
 ------------

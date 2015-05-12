@@ -99,6 +99,17 @@ module.exports = class UploadCollection
   map: (func, context) ->
     @models.map(func, context)
 
+  remove: (upload) ->
+    index = @models.indexOf(upload)
+    throw 'Upload not found' if index == -1
+
+    upload.off('all', @_onUploadEvent, this)
+    delete @_idToModel[upload.id]
+    @_priorityQueue.remove(upload)
+    @trigger('remove', upload, @)
+    @models.splice(index, 1)
+    @length = @models.length
+
   _prepareModel: (upload) ->
     if upload instanceof Upload
       upload

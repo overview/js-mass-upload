@@ -74,78 +74,100 @@ module.exports = MassUpload = (function(superClass) {
     this.lister.callbacks = {
       onStart: (function(_this) {
         return function() {
-          return _this._onListerStart();
+          return _this.set({
+            status: 'listing-files',
+            listFilesError: null
+          });
         };
       })(this),
       onProgress: (function(_this) {
         return function(progressEvent) {
-          return _this._onListerProgress(progressEvent);
+          return _this.set({
+            listFilesProgress: progressEvent
+          });
         };
       })(this),
       onSuccess: (function(_this) {
         return function(fileInfos) {
-          return _this._onListerSuccess(fileInfos);
+          _this.uploads.addFileInfos(fileInfos);
+          return _this._tick();
         };
       })(this),
       onError: (function(_this) {
-        return function(errorDetail) {
-          return _this._onListerError(errorDetail);
+        return function(error) {
+          return _this.set({
+            listFilesError: error,
+            status: 'listing-files-error'
+          });
         };
       })(this),
       onStop: (function(_this) {
-        return function() {
-          return _this._onListerStop();
-        };
+        return function() {};
       })(this)
     };
     this.uploader = (ref1 = options != null ? options.uploader : void 0) != null ? ref1 : new FileUploader(options.doUploadFile);
     this.uploader.callbacks = {
       onStart: (function(_this) {
-        return function(file) {
-          return _this._onUploaderStart(file);
+        return function(upload) {
+          return upload.set({
+            uploading: true,
+            error: null
+          });
         };
       })(this),
       onStop: (function(_this) {
-        return function(file) {
-          return _this._onUploaderStop(file);
+        return function(upload) {
+          upload.set({
+            uploading: false
+          });
+          return _this._tick();
         };
       })(this),
       onSuccess: (function(_this) {
-        return function(file) {
-          return _this._onUploaderSuccess(file);
+        return function(upload) {
+          return upload.updateWithProgress({
+            loaded: upload.size(),
+            total: upload.size()
+          });
         };
       })(this),
       onError: (function(_this) {
-        return function(file, errorDetail) {
-          return _this._onUploaderError(file, errorDetail);
+        return function(upload, error) {
+          return upload.set({
+            error: error
+          });
         };
       })(this),
       onProgress: (function(_this) {
-        return function(file, progressEvent) {
-          return _this._onUploaderProgress(file, progressEvent);
+        return function(upload, progressEvent) {
+          return upload.updateWithProgress(progressEvent);
         };
       })(this)
     };
     this.deleter = (ref2 = options != null ? options.deleter : void 0) != null ? ref2 : new FileDeleter(options.doDeleteFile);
     return this.deleter.callbacks = {
       onStart: (function(_this) {
-        return function(fileInfo) {
-          return _this._onDeleterStart(fileInfo);
+        return function(upload) {
+          return _this.set({
+            status: 'uploading'
+          });
         };
       })(this),
       onSuccess: (function(_this) {
-        return function(fileInfo) {
-          return _this._onDeleterSuccess(fileInfo);
+        return function(upload) {
+          return _this.uploads.remove(upload);
         };
       })(this),
       onError: (function(_this) {
-        return function(fileInfo, errorDetail) {
-          return _this._onDeleterError(fileInfo, errorDetail);
+        return function(upload, error) {
+          return upload.set({
+            error: error
+          });
         };
       })(this),
       onStop: (function(_this) {
-        return function(fileInfo) {
-          return _this._onDeleterStop(fileInfo);
+        return function(upload) {
+          return _this._tick();
         };
       })(this)
     };
@@ -196,33 +218,6 @@ module.exports = MassUpload = (function(superClass) {
     this.uploads.reset();
     return this.prepare();
   };
-
-  MassUpload.prototype._onListerStart = function() {
-    return this.set({
-      status: 'listing-files',
-      listFilesError: null
-    });
-  };
-
-  MassUpload.prototype._onListerProgress = function(progressEvent) {
-    return this.set({
-      listFilesProgress: progressEvent
-    });
-  };
-
-  MassUpload.prototype._onListerSuccess = function(fileInfos) {
-    this.uploads.addFileInfos(fileInfos);
-    return this._tick();
-  };
-
-  MassUpload.prototype._onListerError = function(errorDetail) {
-    return this.set({
-      listFilesError: errorDetail,
-      status: 'listing-files-error'
-    });
-  };
-
-  MassUpload.prototype._onListerStop = function() {};
 
   MassUpload.prototype._mergeUploadError = function(upload, prevError, curError) {
     var index, newErrors;
@@ -292,80 +287,15 @@ module.exports = MassUpload = (function(superClass) {
     return this._tick();
   };
 
-  MassUpload.prototype._onUploaderStart = function(file) {
-    var upload;
-    upload = this.uploads.forFile(file);
-    return upload.set({
-      uploading: true,
-      error: null
-    });
-  };
-
-  MassUpload.prototype._onUploaderStop = function(file) {
-    var upload;
-    upload = this.uploads.forFile(file);
-    upload.set({
-      uploading: false
-    });
-    return this._tick();
-  };
-
-  MassUpload.prototype._onUploaderProgress = function(file, progressEvent) {
-    var upload;
-    upload = this.uploads.forFile(file);
-    return upload.updateWithProgress(progressEvent);
-  };
-
-  MassUpload.prototype._onUploaderError = function(file, errorDetail) {
-    var upload;
-    upload = this.uploads.forFile(file);
-    return upload.set({
-      error: errorDetail
-    });
-  };
-
-  MassUpload.prototype._onUploaderSuccess = function(file) {
-    var upload;
-    upload = this.uploads.forFile(file);
-    return upload.updateWithProgress({
-      loaded: upload.size(),
-      total: upload.size()
-    });
-  };
-
-  MassUpload.prototype._onDeleterStart = function(fileInfo) {
-    return this.set({
-      status: 'uploading'
-    });
-  };
-
-  MassUpload.prototype._onDeleterSuccess = function(fileInfo) {
-    var upload;
-    upload = this.uploads.forFileInfo(fileInfo);
-    return this.uploads.remove(upload);
-  };
-
-  MassUpload.prototype._onDeleterError = function(fileInfo, errorDetail) {
-    var upload;
-    upload = this.uploads.forFileInfo(fileInfo);
-    return upload.set({
-      error: errorDetail
-    });
-  };
-
-  MassUpload.prototype._onDeleterStop = function(fileInfo) {
-    return this._tick();
-  };
-
   MassUpload.prototype._tick = function() {
     var progress, status, upload;
     upload = this.uploads.next();
     this._currentUpload = upload;
     if (upload != null) {
       if (upload.get('deleting')) {
-        this.deleter.run(upload.get('fileInfo'));
+        this.deleter.run(upload);
       } else {
-        this.uploader.run(upload.get('file'));
+        this.uploader.run(upload);
       }
     }
     status = this.get('uploadErrors').length ? 'uploading-error' : upload != null ? 'uploading' : (progress = this.get('uploadProgress'), progress.loaded === progress.total ? 'waiting' : 'waiting-error');
@@ -3562,47 +3492,47 @@ module.exports = FileDeleter = (function() {
     this.running = false;
   }
 
-  FileDeleter.prototype.run = function(fileInfo) {
+  FileDeleter.prototype.run = function(upload) {
     var base;
     if (this.running) {
       throw 'already running';
     }
     this.running = true;
     if (typeof (base = this.callbacks).onStart === "function") {
-      base.onStart(fileInfo);
+      base.onStart(upload);
     }
-    return this.doDeleteFile(fileInfo, ((function(_this) {
-      return function() {
-        return _this._onSuccess(fileInfo);
-      };
-    })(this)), ((function(_this) {
-      return function(errorDetail) {
-        return _this._onError(fileInfo, errorDetail);
+    return this.doDeleteFile(upload, ((function(_this) {
+      return function(error) {
+        if (error) {
+          return _this._onError(upload, error);
+        } else {
+          return _this._onSuccess(upload);
+        }
       };
     })(this)));
   };
 
-  FileDeleter.prototype._onSuccess = function(fileInfo) {
+  FileDeleter.prototype._onSuccess = function(upload) {
     var base;
     if (typeof (base = this.callbacks).onSuccess === "function") {
-      base.onSuccess(fileInfo);
+      base.onSuccess(upload);
     }
-    return this._onStop(fileInfo);
+    return this._onStop(upload);
   };
 
-  FileDeleter.prototype._onError = function(fileInfo, errorDetail) {
+  FileDeleter.prototype._onError = function(upload, error) {
     var base;
     if (typeof (base = this.callbacks).onError === "function") {
-      base.onError(fileInfo, errorDetail);
+      base.onError(upload, error);
     }
-    return this._onStop(fileInfo);
+    return this._onStop(upload);
   };
 
-  FileDeleter.prototype._onStop = function(fileInfo) {
+  FileDeleter.prototype._onStop = function(upload) {
     var base;
     this.running = false;
     if (typeof (base = this.callbacks).onStop === "function") {
-      base.onStop(fileInfo);
+      base.onStop(upload);
     }
     return void 0;
   };
@@ -3663,12 +3593,12 @@ module.exports = FileLister = (function() {
         return typeof (base1 = _this.callbacks).onProgress === "function" ? base1.onProgress(progressEvent) : void 0;
       };
     })(this)), ((function(_this) {
-      return function(fileInfos) {
-        return _this._onSuccess(fileInfos);
-      };
-    })(this)), ((function(_this) {
-      return function(errorDetail) {
-        return _this._onError(errorDetail);
+      return function(error, fileInfos) {
+        if (error != null) {
+          return _this._onError(error);
+        } else {
+          return _this._onSuccess(fileInfos);
+        }
       };
     })(this)));
   };
@@ -3681,8 +3611,8 @@ module.exports = FileLister = (function() {
     return this._onStop();
   };
 
-  FileLister.prototype._onError = function(errorDetail) {
-    this.callbacks.onError(errorDetail);
+  FileLister.prototype._onError = function(error) {
+    this.callbacks.onError(error);
     return this._onStop();
   };
 
@@ -3707,37 +3637,37 @@ module.exports = FileUploader = (function() {
   function FileUploader(doUpload, callbacks) {
     this.doUpload = doUpload;
     this.callbacks = callbacks;
-    this._file = null;
+    this._upload = null;
     this._abortCallback = null;
     this._aborting = false;
   }
 
-  FileUploader.prototype.run = function(file) {
+  FileUploader.prototype.run = function(upload) {
     var base;
-    if (this._file != null) {
+    if (this._upload != null) {
       throw 'already running';
     }
-    this._file = file;
+    this._upload = upload;
     if (typeof (base = this.callbacks).onStart === "function") {
-      base.onStart(this._file);
+      base.onStart(upload);
     }
-    return this._abortCallback = this.doUpload(file, ((function(_this) {
+    return this._abortCallback = this.doUpload(upload, ((function(_this) {
       return function(progressEvent) {
-        return _this._onProgress(file, progressEvent);
+        return _this._onProgress(upload, progressEvent);
       };
     })(this)), ((function(_this) {
-      return function() {
-        return _this._onSuccess(file);
-      };
-    })(this)), ((function(_this) {
-      return function(errorDetail) {
-        return _this._onError(file, errorDetail);
+      return function(error) {
+        if (error) {
+          return _this._onError(upload, error);
+        } else {
+          return _this._onSuccess(upload);
+        }
       };
     })(this)));
   };
 
   FileUploader.prototype.abort = function() {
-    if (this._file && !this._aborting) {
+    if (this._upload && !this._aborting) {
       this._aborting = true;
       if (typeof this._abortCallback === 'function') {
         return this._abortCallback();
@@ -3745,33 +3675,33 @@ module.exports = FileUploader = (function() {
     }
   };
 
-  FileUploader.prototype._onProgress = function(file, progressEvent) {
+  FileUploader.prototype._onProgress = function(upload, progressEvent) {
     var base;
-    return typeof (base = this.callbacks).onProgress === "function" ? base.onProgress(file, progressEvent) : void 0;
+    return typeof (base = this.callbacks).onProgress === "function" ? base.onProgress(upload, progressEvent) : void 0;
   };
 
-  FileUploader.prototype._onSuccess = function(file) {
+  FileUploader.prototype._onSuccess = function(upload) {
     var base;
     if (typeof (base = this.callbacks).onSuccess === "function") {
-      base.onSuccess(file);
+      base.onSuccess(upload);
     }
-    return this._onStop(file);
+    return this._onStop(upload);
   };
 
-  FileUploader.prototype._onError = function(file, errorDetail) {
+  FileUploader.prototype._onError = function(upload, error) {
     var base;
     if (typeof (base = this.callbacks).onError === "function") {
-      base.onError(file, errorDetail);
+      base.onError(upload, error);
     }
-    return this._onStop(file);
+    return this._onStop(upload);
   };
 
-  FileUploader.prototype._onStop = function(file) {
+  FileUploader.prototype._onStop = function(upload) {
     var base;
-    this._file = null;
+    this._upload = null;
     this._abortCallback = null;
     this._aborting = false;
-    return typeof (base = this.callbacks).onStop === "function" ? base.onStop(file) : void 0;
+    return typeof (base = this.callbacks).onStop === "function" ? base.onStop(upload) : void 0;
   };
 
   return FileUploader;
@@ -4048,6 +3978,20 @@ module.exports = UploadCollection = (function() {
 
   UploadCollection.prototype.map = function(func, context) {
     return this.models.map(func, context);
+  };
+
+  UploadCollection.prototype.remove = function(upload) {
+    var index;
+    index = this.models.indexOf(upload);
+    if (index === -1) {
+      throw 'Upload not found';
+    }
+    upload.off('all', this._onUploadEvent, this);
+    delete this._idToModel[upload.id];
+    this._priorityQueue.remove(upload);
+    this.trigger('remove', upload, this);
+    this.models.splice(index, 1);
+    return this.length = this.models.length;
   };
 
   UploadCollection.prototype._prepareModel = function(upload) {

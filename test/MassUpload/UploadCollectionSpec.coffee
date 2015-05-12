@@ -26,6 +26,20 @@ describe 'MassUpload/UploadCollection', ->
       subject.reset()
       expect(resetSpy).to.have.been.calledWith(subject)
 
+  describe 'remove', ->
+    it 'should remove the upload', ->
+      subject.on('remove', spy = sinon.spy())
+      subject.reset([
+        { file: file1, fileInfo: fileInfo1 }
+        { file: file2, fileInfo: fileInfo2 }
+      ])
+      upload = subject.get('file2.txt')
+      subject.remove(upload)
+      expect(subject.length).to.eq(1)
+      expect(subject.get('file2.txt')).not.to.exist
+      expect(subject.get('file1.txt')).to.exist
+      expect(spy).to.have.been.calledWith(upload, subject)
+
   describe 'addFiles() when file does not exist', ->
     addBatchArgs = null
 

@@ -9,8 +9,6 @@ file2 = { name: 'file2.txt', size: 20000, lastModifiedDate: date1 }
 file3 = { name: 'file3.txt', size: 30000, lastModifiedDate: date1 }
 fileInfo1 = { name: 'file1.txt', loaded: 1000, total: 10000, lastModifiedDate: date1 }
 fileInfo2 = { name: 'file2.txt', loaded: 2000, total: 20000, lastModifiedDate: date1 }
-conflictFile = { name: 'conflicting-file.txt', size: 30000, lastModifiedDate: date1 }
-conflictFileInfo = { name: 'conflicting-file.txt', loaded: 3000, total: 30000, lastModifiedDate: date2 }
 
 FakeUpload = Backbone.Model.extend
   initialize: (attributes) ->
@@ -99,12 +97,11 @@ describe 'MassUpload', ->
       lister = { run: sinon.spy() }
       deleter = { run: sinon.spy() }
 
-      options = {
+      options =
         uploads: uploads
         uploader: uploader
         lister: lister
         deleter: deleter
-      }
       subject = new MassUpload(options)
 
     it 'should have status=waiting to begin with', ->
@@ -162,6 +159,8 @@ describe 'MassUpload', ->
           { file: null, fileInfo: fileInfo1, error: null }
           { file: null, fileInfo: fileInfo2, error: null }
         ])
+        @upload1 = subject.uploads.at(0)
+        @upload2 = subject.uploads.at(1)
 
       describe 'when adding files', ->
         beforeEach -> subject.addFiles([file1])
@@ -171,13 +170,13 @@ describe 'MassUpload', ->
 
         describe 'and merge happens', ->
           # That is, when uploads.addFiles() does its thing
-          beforeEach -> subject.uploads.at(0).set({ file: file1 })
+          beforeEach -> @upload1.set({ file: file1 })
 
           it 'should call uploader.run', ->
-            expect(uploader.run).to.have.been.calledWith(file1)
+            expect(uploader.run).to.have.been.calledWith(@upload1)
 
           it 'should set status=uploading when uploader.run is called', ->
-            uploader.callbacks.onStart(file1)
+            uploader.callbacks.onStart(@upload1)
             expect(subject.get('status')).to.eq('uploading')
 
     describe 'when uploading', ->
@@ -187,46 +186,49 @@ describe 'MassUpload', ->
           { file: file2, fileInfo: fileInfo2, error: null }
           { file: file3, fileInfo: null, error: 'previous error' }
         ])
-        uploader.callbacks.onStart(file2)
+        @upload1 = subject.uploads.at(0)
+        @upload2 = subject.uploads.at(1)
+        @upload3 = subject.uploads.at(2)
+        uploader.callbacks.onStart(@upload2)
 
       it 'should set progress on progress', ->
-        uploader.callbacks.onProgress(file2, { loaded: 2400, total: 20000 })
-        expect(uploads.at(1).get('updateWithProgressArguments')).to.deep.eq([{ loaded: 2400, total: 20000 }])
+        uploader.callbacks.onProgress(@upload2, { loaded: 2400, total: 20000 })
+        expect(@upload2.get('updateWithProgressArguments')).to.deep.eq([{ loaded: 2400, total: 20000 }])
 
       it 'should set uploadProgress on progress', ->
-        uploader.callbacks.onProgress(file2, { loaded: 2400, total: 20000 })
+        uploader.callbacks.onProgress(@upload2, { loaded: 2400, total: 20000 })
         expect(subject.get('uploadProgress')).to.deep.eq({ loaded: 3400, total: 60000 })
 
       it 'should set uploading on start', ->
-        expect(uploads.at(1).get('uploading')).to.eq(true)
+        expect(@upload2.get('uploading')).to.eq(true)
 
       it 'should unset error on start', ->
-        uploader.callbacks.onStart(file3)
-        expect(uploads.at(2).get('error')).to.eq(null)
+        uploader.callbacks.onStart(@upload3)
+        expect(@upload3.get('error')).to.eq(null)
 
       it 'should unset uploading on stop', ->
-        uploader.callbacks.onStop(file2)
-        expect(uploads.at(1).get('uploading')).to.eq(false)
+        uploader.callbacks.onStop(@upload2)
+        expect(@upload2.get('uploading')).to.eq(false)
 
       it 'should set upload error on error', ->
-        uploader.callbacks.onError(file2, 'error')
-        expect(uploads.at(1).get('error')).to.eq('error')
+        uploader.callbacks.onError(@upload2, 'error')
+        expect(@upload2.get('error')).to.eq('error')
 
       it 'should set uploadProgress on success', ->
-        uploader.callbacks.onSuccess(file2)
-        expect(uploads.at(1).get('updateWithProgressArguments')).to.deep.eq([ { loaded: 20000, total: 20000 } ])
+        uploader.callbacks.onSuccess(@upload2)
+        expect(@upload2.get('updateWithProgressArguments')).to.deep.eq([ { loaded: 20000, total: 20000 } ])
 
       describe 'when adding a file', ->
         beforeEach ->
-          subject.uploads.at(0).set('file', file1)
+          @upload1.set('file', file1)
 
         it 'should abort uploading', ->
           expect(uploader.abort).to.have.been.called
 
         it 'should start uploading again when abort is complete', ->
-          uploader.callbacks.onStop(file2)
+          uploader.callbacks.onStop(@upload2)
           expect(uploader.run).to.have.been.called
-          expect(uploader.run.lastCall.args[0]).to.eq(file1)
+          expect(uploader.run.lastCall.args[0]).to.eq(@upload1)
 
       describe 'on abort', ->
         beforeEach ->
@@ -247,11 +249,8 @@ describe 'MassUpload', ->
           expect(subject.prepare).to.have.been.called
 
       describe 'when deleting a file', ->
-        uploadToDelete = undefined
-
         beforeEach ->
-          uploadToDelete = uploads.at(0)
-          subject.removeUpload(uploadToDelete)
+          subject.removeUpload(@upload1)
 
         it 'should abort uploading', ->
           expect(uploader.abort).to.have.been.called
@@ -260,35 +259,35 @@ describe 'MassUpload', ->
           beforeEach ->
             deleter.run = (args...) =>
               @deleterRan = args
-              deleter.callbacks.onStart(fileInfo1)
-            uploader.callbacks.onStop(file2)
+              deleter.callbacks.onStart(@upload1)
+            uploader.callbacks.onStop(@upload2)
 
           it 'should call deleter.run()', ->
-            expect(@deleterRan).to.deep.eq([ uploadToDelete.get('fileInfo') ])
+            expect(@deleterRan).to.deep.eq([ @upload1 ])
 
           describe 'when delete is complete', ->
             beforeEach ->
-              deleter.callbacks.onSuccess(fileInfo1)
-              deleter.callbacks.onStop(fileInfo1)
+              deleter.callbacks.onSuccess(@upload1)
+              deleter.callbacks.onStop(@upload1)
 
             it 'should remove the upload from the list', ->
               expect(uploads.length).to.eq(2)
 
             it 'should continue with uploading', ->
               expect(uploader.run).to.have.been.called
-              expect(uploader.run.lastCall.args[0]).to.eq(file2)
+              expect(uploader.run.lastCall.args[0]).to.eq(@upload2)
 
           describe 'when delete fails', ->
             beforeEach ->
-              deleter.callbacks.onError(fileInfo1, 'error')
-              deleter.callbacks.onStop(fileInfo1)
+              deleter.callbacks.onError(@upload1, 'error')
+              deleter.callbacks.onStop(@upload1)
 
             it 'should keep the upload in the list', ->
               expect(uploads.length).to.eq(3)
 
             it 'should set error and keep deleting=true', ->
-              expect(uploadToDelete.get('deleting')).to.eq(true)
-              expect(uploadToDelete.get('error')).to.eq('error')
+              expect(@upload1.get('deleting')).to.eq(true)
+              expect(@upload1.get('error')).to.eq('error')
 
             it 'should continue with uploading', ->
               expect(uploader.run).to.have.been.called
@@ -298,10 +297,11 @@ describe 'MassUpload', ->
         uploads.reset([
           { file: file1, fileInfo: fileInfo1, error: null }
         ])
-        uploader.callbacks.onStart(file1)
+        upload1 = uploads.at(0)
+        uploader.callbacks.onStart(upload1)
         uploads.next = sinon.stub().returns(null)
-        uploader.callbacks.onSuccess(file1)
-        uploader.callbacks.onStop(file1)
+        uploader.callbacks.onSuccess(upload1)
+        uploader.callbacks.onStop(upload1)
 
       it 'should set status=waiting', ->
         expect(subject.get('status')).to.eq('waiting')
@@ -311,21 +311,22 @@ describe 'MassUpload', ->
         uploads.reset([
           { file: file1, fileInfo: fileInfo1, error: 'an error' }
         ])
+        @upload = uploads.at(0)
 
       it 'should have status uploading-error, even when waiting', ->
         expect(subject.get('status')).to.eq('uploading-error')
 
       it 'should allow retryUpload', ->
-        subject.retryUpload(uploads.at(0))
-        expect(uploader.run).to.have.been.called
+        subject.retryUpload(@upload)
+        expect(uploader.run).to.have.been.calledWith(@upload)
 
       it 'should allow retryAllUploads', ->
         subject.retryAllUploads()
-        expect(uploader.run).to.have.been.called
+        expect(uploader.run).to.have.been.calledWith(@upload)
 
       it 'should have uploadErrors', ->
         expect(subject.get('uploadErrors')).to.deep.eq([
-          { upload: uploads.at(0), error: 'an error' }
+          { upload: @upload, error: 'an error' }
         ])
 
     describe 'with a missing file', ->
