@@ -1,4 +1,5 @@
 Backbone = require('backbone')
+_ = require('underscore')
 Upload = require('./Upload')
 
 # Helper for use with UploadCollection.next()
@@ -86,12 +87,14 @@ class UploadPriorityQueue
 # To mock this collection, just use a Backbone.Collection, and have it
 # trigger "add-batch" after each add.
 module.exports = class UploadCollection
-  @:: = Object.create(Backbone.Events)
+  @prototype = Object.create(Backbone.Events)
 
   constructor: ->
+    _.extend(@, Backbone.Events)
     @models = []
+    @length = 0
+    @_idToModel = {}
     @_priorityQueue = new UploadPriorityQueue()
-    @reset([])
 
   each: (func, context) ->
     @models.forEach(func, context)

@@ -1,14 +1,13 @@
 Backbone = require('backbone')
 MassUpload = require('../src/MassUpload')
 
-date1 = new Date('Mon, 12 Aug 2013 14:43:17 -0400')
-date2 = new Date('Mon, 12 Aug 2013 15:43:17 -0400')
+date1 = new Date('Mon, 12 Aug 2013 14:43:17 -0400').valueOf()
 
-file1 = { name: 'file1.txt', size: 10000, lastModifiedDate: date1 }
-file2 = { name: 'file2.txt', size: 20000, lastModifiedDate: date1 }
-file3 = { name: 'file3.txt', size: 30000, lastModifiedDate: date1 }
-fileInfo1 = { name: 'file1.txt', loaded: 1000, total: 10000, lastModifiedDate: date1 }
-fileInfo2 = { name: 'file2.txt', loaded: 2000, total: 20000, lastModifiedDate: date1 }
+file1 = { name: 'file1.txt', size: 10000, lastModified: date1 }
+file2 = { name: 'file2.txt', size: 20000, lastModified: date1 }
+file3 = { name: 'file3.txt', size: 30000, lastModified: date1 }
+fileInfo1 = { name: 'file1.txt', loaded: 1000, total: 10000, lastModified: date1 }
+fileInfo2 = { name: 'file2.txt', loaded: 2000, total: 20000, lastModified: date1 }
 
 FakeUpload = Backbone.Model.extend
   initialize: (attributes) ->
@@ -50,33 +49,35 @@ describe 'MassUpload', ->
 
     it 'should set uploads, lister, uploader and deleter to default implementations', ->
       subject = new MassUpload()
-      expect(subject.uploads).to.be.defined
-      expect(subject.lister).to.be.defined
-      expect(subject.uploader).to.be.defined
-      expect(subject.deleter).to.be.defined
+      expect(subject.uploads).not.to.be.undefined
+      expect(subject.lister).not.to.be.undefined
+      expect(subject.uploader).not.to.be.undefined
+      expect(subject.deleter).not.to.be.undefined
 
     it 'should set callbacks on lister', ->
       subject = new MassUpload()
       for k in [ 'onStart', 'onStop', 'onProgress', 'onSuccess', 'onError' ]
-        expect(subject.lister.callbacks[k]).to.be.defined
+        expect(subject.lister.callbacks[k]).not.to.be.undefined
 
     it 'should set callbacks on uploader', ->
       subject = new MassUpload()
       for k in [ 'onStart', 'onStop', 'onProgress', 'onSuccess', 'onError' ]
-        expect(subject.uploader.callbacks[k]).to.be.defined
+        expect(subject.uploader.callbacks[k]).not.to.be.undefined
 
     it 'should set callbacks on deleter', ->
       subject = new MassUpload()
       for k in [ 'onStart', 'onStop', 'onSuccess', 'onError' ]
-        expect(subject.deleter.callbacks[k]).to.be.defined
+        expect(subject.deleter.callbacks[k]).not.to.be.undefined
 
     it 'should allow user-set lister, uploader and deleter, for testing', ->
-      attrs = [ 'lister', 'uploader', 'deleter' ]
-      options = {}
-      options[attr] = attr for attr in attrs
+      lister = {}
+      uploader = {}
+      deleter = {}
+      options = { lister: lister, uploader: uploader, deleter: deleter }
       subject = new MassUpload(options)
-      for attr in attrs
-        expect(subject[attr]).to.eq(options[attr])
+      expect(subject.lister).to.equal(lister)
+      expect(subject.uploader).to.equal(uploader)
+      expect(subject.deleter).to.equal(deleter)
 
     it 'should allow user-set uploads, for testing', ->
       options = { uploads: new FakeUploads() }
@@ -123,7 +124,7 @@ describe 'MassUpload', ->
         expect(subject.get('status')).to.eq('listing-files')
 
       describe 'on success', ->
-        fileInfos = [ { name: 'file.txt', total: 10000, loaded: 1000, lastModifiedDate: date1 } ]
+        fileInfos = [ { name: 'file.txt', total: 10000, loaded: 1000, lastModified: date1 } ]
 
         beforeEach ->
           lister.callbacks.onSuccess(fileInfos)
@@ -243,7 +244,7 @@ describe 'MassUpload', ->
           expect(subject.get('uploadProgress')).to.deep.eq({ loaded: 0, total: 0 })
 
         it 'has no uploads', ->
-          expect(subject.uploads.at(0)).not.to.be.defined
+          expect(subject.uploads.at(0)).to.be.undefined
 
         it 'resets the uploader, lister, etc', ->
           expect(subject.prepare).to.have.been.called

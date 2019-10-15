@@ -30,8 +30,6 @@ FileInfo = require('./FileInfo')
 # deleted: instead, do something when the Upload with `deleting=true` has
 # been removed from its UploadCollection.
 module.exports = class Upload
-  @:: = Object.create(Backbone.Events)
-
   defaults:
     file: null
     fileInfo: null
@@ -40,6 +38,7 @@ module.exports = class Upload
     deleting: false
 
   constructor: (attributes) ->
+    _.extend(@, Backbone.Events)
     @file = attributes.file ? null
     @fileInfo = attributes.fileInfo ? null
     @error = attributes.error ? null
@@ -75,17 +74,17 @@ module.exports = class Upload
   # Use this, not @file.size, to avoid repeated synchronous filesystem calls.
   size: -> @_size ?= @file?.size
 
-  # Returns the memoized lastModifiedDate
+  # Returns the memoized lastModified
   #
-  # Use this, not @file.lastModifiedDate, to avoid repeated synchronous filesystem calls.
-  lastModifiedDate: -> @_lastModifiedDate ?= @file?.lastModifiedDate
+  # Use this, not @file.lastModified, to avoid repeated synchronous filesystem calls.
+  lastModified: -> @_lastModified ?= @file?.lastModified
 
   # Updates the `fileInfo` object with the given `progressEvent`.
   #
   # `progressEvent` must have `loaded` and `total` properties.
   updateWithProgress: (progressEvent) ->
     # Always create a new FileInfo object, whether one exists or not.
-    fileInfo = new FileInfo(@id, @lastModifiedDate(), progressEvent.total, progressEvent.loaded)
+    fileInfo = new FileInfo(@id, @lastModified(), progressEvent.total, progressEvent.loaded)
     @set(fileInfo: fileInfo)
 
   # Returns a progress object with `loaded` and `total` properties.
@@ -111,5 +110,5 @@ module.exports = class Upload
     @fileInfo? && @file? && (
       @fileInfo.name != @id ||
       @fileInfo.total != @size() ||
-      @fileInfo.lastModifiedDate?.getTime?() != @lastModifiedDate()?.getTime?()
+      @fileInfo.lastModified != @lastModified()
     )

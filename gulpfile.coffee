@@ -3,11 +3,11 @@ coffeeify = require('coffeeify')
 derequire = require('gulp-derequire')
 gulp = require('gulp')
 gutil = require('gulp-util')
-karma = require('karma').server
+karma = require('karma')
 rename = require('gulp-rename')
 rimraf = require('gulp-rimraf')
 source = require('vinyl-source-stream')
-uglify = require('gulp-uglify')
+uglify = require('gulp-uglify-es').default
 
 gulp.task 'clean', ->
   gulp.src('./js-mass-upload*.js', read: false)
@@ -17,7 +17,7 @@ gulp.task 'clean-demo', ->
   gulp.src('./demo/js', read: false)
     .pipe(rimraf())
 
-gulp.task 'browserify', [ 'clean' ], ->
+gulp.task 'run-browserify', ->
   b = browserify('./src/MassUpload.coffee', {
     extensions: [ '.js', '.coffee' ]
     standalone: 'MassUpload'
@@ -30,7 +30,7 @@ gulp.task 'browserify', [ 'clean' ], ->
     .pipe(derequire())
     .pipe(gulp.dest('.'))
 
-gulp.task 'browserify-demo', [ 'browserify', 'clean-demo' ], ->
+gulp.task 'run-browserify-demo', ->
   b = browserify('./app.coffee', {
     extensions: [ '.js', '.coffee' ]
     basedir: './demo/coffee'
@@ -43,16 +43,22 @@ gulp.task 'browserify-demo', [ 'browserify', 'clean-demo' ], ->
     .pipe(derequire())
     .pipe(gulp.dest('./demo/js'))
 
-gulp.task 'minify', [ 'browserify' ], ->
+gulp.task 'run-minify', ->
   gulp.src('js-mass-upload.js')
     .pipe(uglify())
     .pipe(rename(suffix: '.min'))
     .pipe(gulp.dest('.'))
 
-gulp.task 'test-browser', (done) ->
-  karma.start({
+gulp.task 'browserify', gulp.series('clean', 'run-browserify')
+
+gulp.task 'browserify-demo', gulp.series('browserify', 'clean-demo', 'run-browserify-demo')
+
+gulp.task 'minify', gulp.series('browserify', 'run-minify')
+
+gulp.task 'test', (done) ->
+  server = new karma.Server({
     singleRun: true
-    browsers: [ 'PhantomJS' ]
+    browsers: [ 'Electron' ]
     frameworks: [ 'browserify', 'mocha' ]
     reporters: [ 'dots' ]
     browserify:
@@ -65,8 +71,8 @@ gulp.task 'test-browser', (done) ->
     ]
     preprocessors:
       '**/*.coffee': 'browserify'
-  }, done)
+      '**/*.js': 'electron'
+  })
+  server.start(done)
 
-gulp.task('test', [ 'test-browser' ])
-
-gulp.task('default', [ 'minify', 'browserify-demo' ])
+gulp.task('default', gulp.series('clean', 'run-browserify', 'run-minify'))

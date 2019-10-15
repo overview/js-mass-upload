@@ -1,10 +1,10 @@
 module.exports = class FileInfo
-  constructor: (@name, @lastModifiedDate, @total, @loaded) ->
+  constructor: (@name, @lastModified, @total, @loaded) ->
 
 FileInfo.fromJson = (obj) ->
   new FileInfo(
     obj.name,
-    new Date(obj.lastModifiedDate),
+    obj.lastModified,
     obj.total,
     obj.loaded
   )
@@ -12,7 +12,7 @@ FileInfo.fromJson = (obj) ->
 FileInfo.fromFile = (obj) ->
   new FileInfo(
     obj.webkitRelativePath || obj.name,
-    obj.lastModifiedDate,
+    obj.lastModified,
     obj.size,
     0
   )

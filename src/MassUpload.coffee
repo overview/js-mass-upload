@@ -74,8 +74,8 @@ module.exports = class MassUpload extends Backbone.Model
 
   # We never pass attributes to the constructor
   constructor: (options) ->
-    @_removedUploads = [] # uploads removed by the user, still on the server
     super({}, options)
+    @_removedUploads = [] # uploads removed by the user, still on the server
 
   initialize: (attributes, options) ->
     @_options = options

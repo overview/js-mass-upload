@@ -14,8 +14,8 @@ describe 'MassUpload/FileDeleter', ->
 
   describe 'on run', ->
     beforeEach ->
-      date = new Date('Mon, 12 Aug 2013 13:40:08 -0400')
-      fileInfo = { name: 'file.txt', lastModifiedDate: date, loaded: 2000, total: 10000 }
+      date = new Date('Mon, 12 Aug 2013 13:40:08 -0400').valueOf()
+      fileInfo = { name: 'file.txt', lastModified: date, loaded: 2000, total: 10000 }
       @upload = new Backbone.Model(fileInfo: fileInfo)
       @subject.run(@upload)
       [ __, @userDone ] = @doDeleteFile.lastCall?.args ? []
@@ -30,7 +30,7 @@ describe 'MassUpload/FileDeleter', ->
       expect(@spies.onStart).to.have.been.calledWith(@upload)
 
     it 'should pass done functions to doDeleteFile', ->
-      expect(@userDone).to.be.defined
+      expect(@userDone).not.to.be.undefined
 
     describe 'on success', ->
       beforeEach -> @userDone()

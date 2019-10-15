@@ -2,7 +2,7 @@ module.exports = function(config) {
   config.set({
     autoWatch: true,
     basePath: '..',
-    browsers: [ 'PhantomJS' ],
+    browsers: [ 'Electron' ],
     frameworks: [ 'browserify', 'mocha' ],
     reporters: [ 'dots' ],
     browserify: {
@@ -12,9 +12,10 @@ module.exports = function(config) {
     },
     preprocessors: {
       '**/*.coffee': [ 'browserify' ],
-      'src/**/*.js': [ 'browserify' ],
-      'test/**/*.js': [ 'browserify' ]
+      'src/**/*.js': [ 'browserify', 'electron' ],
+      'test/**/*.js': [ 'browserify', 'electron' ]
     },
+
     files: [
       'test/init.coffee',
       { pattern: 'test/**/*Spec.coffee' }

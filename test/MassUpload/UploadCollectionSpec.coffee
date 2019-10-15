@@ -2,14 +2,13 @@ _ = require('underscore')
 UploadCollection = require('../../src/MassUpload/UploadCollection')
 
 describe 'MassUpload/UploadCollection', ->
-  date1 = new Date('Mon, 12 Aug 2013 10:02:54 -0400')
-  date2 = new Date('Mon, 12 Aug 2013 11:02:54 -0400')
+  date1 = new Date('Mon, 12 Aug 2013 10:02:54 -0400').valueOf()
 
-  file1 = { name: 'file1.txt', lastModifiedDate: date1, size: 10000 }
-  file2 = { name: 'file2.txt', lastModifiedDate: date1, size: 20000 }
+  file1 = { name: 'file1.txt', lastModified: date1, size: 10000 }
+  file2 = { name: 'file2.txt', lastModified: date1, size: 20000 }
 
-  fileInfo1 = { name: 'file1.txt', lastModifiedDate: date1, loaded: 2000, total: 10000 }
-  fileInfo2 = { name: 'file2.txt', lastModifiedDate: date1, loaded: 3000, total: 20000 }
+  fileInfo1 = { name: 'file1.txt', lastModified: date1, loaded: 2000, total: 10000 }
+  fileInfo2 = { name: 'file2.txt', lastModified: date1, loaded: 3000, total: 20000 }
 
   subject = undefined
   beforeEach -> subject = new UploadCollection([])
@@ -68,7 +67,7 @@ describe 'MassUpload/UploadCollection', ->
       expect(addBatchArgs[0][0].attributes.file).to.eq(file1)
 
   describe 'addFiles() when an un-uploaded file already exists', ->
-    file1 = { name: 'file1.txt', lastModifiedDate: date1, size: 10000 }
+    file1 = { name: 'file1.txt', lastModified: date1, size: 10000 }
     addBatchArgs = null
 
     beforeEach ->
@@ -114,11 +113,11 @@ describe 'MassUpload/UploadCollection', ->
       expect(addBatchArgs[0][0].attributes.fileInfo).to.eq(fileInfo1)
 
   describe 'with a file-backed Upload', ->
-    file1 = { name: 'file1.txt', lastModifiedDate: date1, size: 10000 }
+    file1 = { name: 'file1.txt', lastModified: date1, size: 10000 }
     beforeEach -> subject.addFiles([file1])
 
     it 'should merge a fileInfo through addFileInfos()', ->
-      fileInfo1 = { name: 'file1.txt', lastModifiedDate: date1, loaded: 2000, total: 10000 }
+      fileInfo1 = { name: 'file1.txt', lastModified: date1, loaded: 2000, total: 10000 }
       subject.addFileInfos([fileInfo1])
       expect(subject.length).to.eq(1)
       upload = subject.models[0]
@@ -126,11 +125,11 @@ describe 'MassUpload/UploadCollection', ->
       expect(upload.attributes.fileInfo).to.eq(fileInfo1)
 
   describe 'with a fileInfo-backed Upload', ->
-    fileInfo1 = { name: 'file1.txt', lastModifiedDate: date1, loaded: 2000, total: 10000 }
+    fileInfo1 = { name: 'file1.txt', lastModified: date1, loaded: 2000, total: 10000 }
     beforeEach -> subject.addFileInfos([fileInfo1])
 
     it 'should merge a file through addFiles()', ->
-      file1 = { name: 'file1.txt', lastModifiedDate: date1, size: 10000 }
+      file1 = { name: 'file1.txt', lastModified: date1, size: 10000 }
       subject.addFiles([file1])
       expect(subject.length).to.eq(1)
       upload = subject.models[0]
@@ -143,7 +142,7 @@ describe 'MassUpload/UploadCollection', ->
         id: 'foo/bar.txt'
         name: 'bar.txt'
         webkitRelativePath: 'foo/bar.txt'
-        lastModifiedDate: date1
+        lastModified: date1
         size: 10000
 
       subject.addFiles([ file ])
@@ -153,7 +152,7 @@ describe 'MassUpload/UploadCollection', ->
       file =
         id: 'bar.txt'
         name: 'bar.txt'
-        lastModifiedDate: date1
+        lastModified: date1
         size: 10000
 
       subject.addFiles([ file ])

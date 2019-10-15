@@ -6,15 +6,15 @@ describe 'MassUpload/FileInfo', ->
   describe '.fromJson', ->
     subject = FileInfo.fromJson
       name: 'name'
-      lastModifiedDate: '2013-08-07T10:28:13-04:00'
+      lastModified: new Date('2013-08-07T10:28:13-04:00').valueOf()
       total: 100000
       loaded: 20000
 
     it 'should have name', ->
       expect(subject.name).to.eq('name')
 
-    it 'should parse lastModifiedDate in the correct timezone', ->
-      expect(subject.lastModifiedDate.getTime()).to.eq(1375885693000)
+    it 'should have lastModified', ->
+      expect(subject.lastModified).to.eq(1375885693000)
 
     it 'should have total', ->
       expect(subject.total).to.eq(100000)
@@ -26,14 +26,14 @@ describe 'MassUpload/FileInfo', ->
     beforeEach ->
       subject = FileInfo.fromFile
         name: 'name'
-        lastModifiedDate: new Date(1375885693000)
+        lastModified: 1375885693000
         size: 10000
 
     it 'should have name', ->
       expect(subject.name).to.eq('name')
 
-    it 'should have lastModifiedDate', ->
-      expect(subject.lastModifiedDate.getTime()).to.eq(1375885693000)
+    it 'should have lastModified', ->
+      expect(subject.lastModified).to.eq(1375885693000)
 
     it 'should have total', ->
       expect(subject.total).to.eq(10000)
@@ -44,7 +44,7 @@ describe 'MassUpload/FileInfo', ->
     it 'should use .webkitRelativePath if there is one', ->
       subject = FileInfo.fromFile
         name: 'name'
-        lastModifiedDaet: new Date()
+        lastModified: new Date().valueOf()
         size: 10000
         webkitRelativePath: 'foo/bar/name'
 

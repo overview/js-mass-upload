@@ -20,7 +20,7 @@ describe 'MassUpload/FileUploader', ->
 
   describe 'run', ->
     beforeEach ->
-      @file = { name: 'file1', size: 1000, lastModifiedDate: null }
+      @file = { name: 'file1', size: 1000, lastModified: null }
       @upload = new Backbone.Model(file: @file)
       @userAbort = sinon.spy()
       @doUpload.returns(@userAbort)
@@ -68,7 +68,7 @@ describe 'MassUpload/FileUploader', ->
 
   describe 'on abort when abort is not a function', ->
     beforeEach ->
-      @file = { name: 'file1', size: 1000, lastModifiedDate: null }
+      @file = { name: 'file1', size: 1000, lastModified: null }
       @upload = new Backbone.Model(file: @file)
       @userAbort = 'some stupid return value'
       @doUpload.returns(@userAbort)

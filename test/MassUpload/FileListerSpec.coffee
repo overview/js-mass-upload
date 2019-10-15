@@ -26,8 +26,8 @@ describe 'MassUpload/FileLister', ->
       expect(@doListFiles).to.have.been.called
 
     it 'should pass progress and done functions to doListFiles', ->
-      expect(@userProgress).to.be.defined
-      expect(@userDone).to.be.defined
+      expect(@userProgress).not.to.be.undefined
+      expect(@userDone).not.to.be.undefined
 
     describe 'on progress', ->
       beforeEach ->

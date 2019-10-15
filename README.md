@@ -25,14 +25,6 @@ Or you can use [Browserify](http://browserify.org/) or plain Node `require`:
 var MassUpload = require('js-mass-upload');
 ```
 
-Or, you can go the old-fashioned route in your HTML:
-
-```html
-<script src="path/to/underscore-1.5.1.js"></script>
-<script src="path/to/backbone-1.0.0.js"></script>
-<script src="path/to/mass-upload.no-require.js"></script>
-```
-
 Now you'll need to implement a few asynchronous functions. The return values are ignored; instead, these functions are expected to call the appropriate callbacks that are passed to them.
 
 ```javascript
@@ -81,7 +73,7 @@ But first let's define some datatypes:
     * `deleteUpload(upload)`: deletes an upload
 * `MassUpload.FileInfo`: depicts a file on the server. An object containing:
     * `name` (a `String`)
-    * `lastModifiedDate` (a `Date`)
+    * `lastModified` (an integer `Number` of milliseconds since Unix epoch)
     * `total` (an integer `Number` depicting total size)
     * `loaded` (an integer `Number` less than or equal to `size`)
 * `MassUpload.Upload`: depicts a single object which either *is* on the server or *should* be on the server. An object containing:
@@ -179,7 +171,7 @@ Talking with a server
 
 Let's portray an example web service in which the user owns a bunch of folders. For each folder, the user owns some files.
 
-Let's give each file a [GUID](http://en.wikipedia.org/wiki/Globally_unique_identifier) based on its filename, size and lastModifiedDate.
+Let's give each file a [GUID](http://en.wikipedia.org/wiki/Globally_unique_identifier) based on its filename, size and lastModified.
 
 Let's also assume we want to be able to resume uploads. We can't do that with multipart/form-data; instead, we'll upload raw binary blobs.
 
@@ -193,7 +185,7 @@ Our server API might look something like this:
 | `PUT` | `/folders/:permalink` | `name` | Renames a folder |
 | `GET` | `/folders/:permalink/files` | | Lists a folder's contents |
 | `DELETE` | `/folders/:permalink/files` | | Deletes all files from the folder
-| `PUT` | `/folders/:permalink/files/:guid` | `name`, `size`, `lastModifiedDate` | Creates an empty file with the given GUID
+| `PUT` | `/folders/:permalink/files/:guid` | `name`, `size`, `lastModified` | Creates an empty file with the given GUID
 | `HEAD` | `/folders/:permalink/files/:guid` | | Describes how much of the file is uploaded, using a [`Content-Range`](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16) header.
 | `PATCH` | `/folders/:permalink/files/:guid` | (raw bytes) | Uploads the file's raw bytes using the passed `Content-Range` header. Fails if the `Content-Range` would create a gap in the file or go past the end of the file; succeeds once the file is completely uploaded.
 | `DELETE` | `/folders/:permalink/files/:guid` | | Deletes the file from the server

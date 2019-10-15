@@ -2,9 +2,9 @@ date1 = new Date('Mon, 13 Aug 2013 09:29:16 -0400')
 date2 = new Date('Mon, 14 Aug 2013 09:29:16 -0400')
 date3 = new Date('Mon, 15 Aug 2013 09:29:16 -0400')
 serverFiles = [
-  { name: 'file1.txt', loaded: 2000, total: 10000, lastModifiedDate: date1 }
-  { name: 'file2.txt', loaded: 3000, total: 20000, lastModifiedDate: date2 }
-  { name: 'file3.txt', loaded: 4000, total: 30000, lastModifiedDate: date3 }
+  { name: 'file1.txt', loaded: 2000, total: 10000, lastModified: date1.valueOf() }
+  { name: 'file2.txt', loaded: 3000, total: 20000, lastModified: date2.valueOf() }
+  { name: 'file3.txt', loaded: 4000, total: 30000, lastModified: date3.valueOf() }
 ]
 
 networkIsWorking = true # when false, all ticks fail
