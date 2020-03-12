@@ -61,6 +61,13 @@ describe 'MassUpload/Upload', ->
       it 'should have getProgress() return the progress', ->
         expect(subject.getProgress()).to.deep.eq({ loaded: 2000, total: 10000 })
 
+  describe 'with a hard-coded id', ->
+    file = { size: 10000, name: 'file.txt', lastModified: date1 }
+    subject = new Upload({ id: 'subdir/file.txt', file: file })
+
+    it 'should have an id of the filename', ->
+      expect(subject.id).to.eq('subdir/file.txt')
+
   describe 'starting with a completed FileInfo', ->
     fileInfo = { loaded: 10000, total: 10000, name: 'file.txt', lastModified: date1 }
     subject = undefined

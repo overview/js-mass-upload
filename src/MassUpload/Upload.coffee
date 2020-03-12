@@ -44,7 +44,9 @@ module.exports = class Upload
     @error = attributes.error ? null
     @uploading = attributes.uploading || false
     @deleting = attributes.deleting || false
-    @id = if @file?
+    @id = if attributes.id?
+      attributes.id
+    else if @file?
       @file.webkitRelativePath || @file.name
     else
       @fileInfo.name

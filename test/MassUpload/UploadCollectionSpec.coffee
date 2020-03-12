@@ -1,5 +1,6 @@
 _ = require('underscore')
 UploadCollection = require('../../src/MassUpload/UploadCollection')
+Upload = require('../../src/MassUpload/Upload')
 
 describe 'MassUpload/UploadCollection', ->
   date1 = new Date('Mon, 12 Aug 2013 10:02:54 -0400').valueOf()
@@ -136,32 +137,21 @@ describe 'MassUpload/UploadCollection', ->
       expect(upload.attributes.file).to.eq(file1)
       expect(upload.attributes.fileInfo).to.eq(fileInfo1)
 
-  describe 'forFile', ->
-    it 'should search by webkitRelativePath if there is one', ->
-      file =
-        id: 'foo/bar.txt'
-        name: 'bar.txt'
-        webkitRelativePath: 'foo/bar.txt'
-        lastModified: date1
-        size: 10000
+  describe 'addWithMerge', ->
+    it 'should add a File', ->
+      file = { name: 'name', lastModified: date1, size: 123 }
+      subject.addWithMerge([{ id: 'id', file: file }])
+      expect(subject.models).to.have.length(1)
+      expect(subject.models[0].id).to.eq('id')
+      expect(subject.models[0].file).to.eq(file)
 
-      subject.addFiles([ file ])
-      expect(subject.forFile(file).file).to.eq(file)
-
-    it 'should search by name if there is no webkitRelativePath', ->
-      file =
-        id: 'bar.txt'
-        name: 'bar.txt'
-        lastModified: date1
-        size: 10000
-
-      subject.addFiles([ file ])
-      expect(subject.forFile(file).file).to.eq(file)
-
-  describe 'forFileInfo', ->
-    it 'should search by name', ->
-      subject.addFileInfos([ fileInfo1 ])
-      expect(subject.forFileInfo(fileInfo1).fileInfo).to.eq(fileInfo1)
+    it 'should update a File', ->
+      file = { name: 'name', lastModified: date1, size: 123 }
+      fileInfo = { name: 'name', lastModified: date1, total: 123, loaded: 10 }
+      subject.addWithMerge([{ id: 'id', file: file }])
+      subject.addWithMerge([{ id: 'id', file: file, fileInfo: fileInfo }])
+      expect(subject.models).to.have.length(1)
+      expect(subject.models[0].fileInfo).to.eq(fileInfo)
 
   describe 'next', ->
     it 'should return null on empty collection', ->

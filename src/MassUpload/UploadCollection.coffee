@@ -138,17 +138,13 @@ module.exports = class UploadCollection
   get: (id) ->
     @_idToModel[id] ? null
 
-  forFile: (file) -> @get(file.webkitRelativePath || file.name)
-  forFileInfo: (fileInfo) -> @get(fileInfo.name)
-
   # Adds some user-selected files to the collection.
   #
   # Files of the same name will be matched up to their server-side fileInfo
   # objects. This may lead to conflict which must be resolved by the
   # developer or user.
   addFiles: (files) ->
-    uploads = (new Upload({ file: file }) for file in files)
-    @_addWithMerge(uploads)
+    @addWithMerge({ file: file } for file in files)
 
   # Adds server-side fileInfo objects to the collection.
   #
@@ -156,8 +152,7 @@ module.exports = class UploadCollection
   # will specify files through `addFiles()` which may be new or may be
   # joined through their filenames to these fileInfo objects.
   addFileInfos: (fileInfos) ->
-    uploads = (new Upload({ fileInfo: fileInfo }) for fileInfo in fileInfos)
-    @_addWithMerge(uploads)
+    @addWithMerge({ fileInfo: fileInfo } for fileInfo in fileInfos)
 
   # Finds the next upload to handle.
   #
@@ -194,6 +189,7 @@ module.exports = class UploadCollection
       @addBatch([uploadOrUploads])
 
   addBatch: (uploads) ->
+    uploads = (@_prepareModel(u) for u in uploads)
     for upload in uploads
       @_idToModel[upload.id] = upload
       upload.on('all', @_onUploadEvent, this)
@@ -215,9 +211,10 @@ module.exports = class UploadCollection
 
   # Like add([...], merge: true), but it never subtracts attributes.
   #
-  # In other words, _addWithMerge() will _set_ file or fileInfo on models,
+  # In other words, addWithMerge() will _set_ file or fileInfo on models,
   # but it will never _unset_ either property.
-  _addWithMerge: (uploads) ->
+  addWithMerge: (uploads) ->
+    uploads = (@_prepareModel(u) for u in uploads)
     toAdd = []
 
     for upload in uploads
