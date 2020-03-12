@@ -43,10 +43,12 @@ tickUploadFileAtByte = (file, bytes, progress, done) ->
 
 module.exports =
   # Returns three dummy files, taking about a second
-  doListFiles: (progress, done) -> tickListFilesAtBytes(0, progress, done)
+  doListFiles: (progress, done) ->
+    tickListFilesAtBytes(0, progress, done)
 
   # "Uploads" the file at 100kb/s (really, does nothing but call success)
-  doUploadFile: (upload, progress, done) -> tickUploadFileAtByte(upload.get('file'), 0, progress, done)
+  doUploadFile: (upload, progress, done) ->
+    tickUploadFileAtByte(upload.get('file'), 0, progress, done)
 
   # "Deletes" the file after 1s (really, does nothing but call success)
   doDeleteFile: (upload, done) ->
