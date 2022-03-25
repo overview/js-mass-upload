@@ -29,7 +29,7 @@
     "coffee-script": "^1.9.2",
     "coffeeify": "^3.0.1",
     "coffeescript": "^2.4.1",
-    "electron": "^6.0.12",
+    "electron": "^13.6.6",
     "gulp": "^4.0.2",
     "gulp-derequire": "^2.1.0",
     "gulp-rename": "^1.2.2",
